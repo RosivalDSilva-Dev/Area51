@@ -80,6 +80,31 @@ textarea{width:100%;min-height:42vh;background:var(--panel2);color:var(--text);b
 #worst{text-align:left;font-size:13px;color:var(--muted);margin:0 0 14px;padding-left:18px}
 .chip{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted);margin:2px}
 #tapbtn{width:100%;padding:26px;font-size:20px;margin-top:10px}
+/* palco (tela de canto em tela cheia, ideal na horizontal) */
+body.stage header{display:none}
+body.stage main{max-width:none;padding:0}
+body.stage #tab-cantar{position:fixed;inset:0;z-index:4;background:#0a0811}
+body.stage #stage{position:absolute;top:0;bottom:0;left:0;right:calc(89px + env(safe-area-inset-right));border:0;border-radius:0}
+body.stage #lane{height:100%;min-height:0}
+body.stage #lyrics{position:absolute;left:0;right:0;bottom:0;padding:26px 12px calc(10px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:linear-gradient(rgba(10,8,17,0),rgba(10,8,17,.94) 40%);min-height:0;pointer-events:none}
+body.stage #lnow{font-size:clamp(18px,5vh,30px)}
+body.stage #lnext{font-size:clamp(13px,3.4vh,19px);margin-top:4px}
+body.stage #hud{left:max(60px,calc(52px + env(safe-area-inset-left)));right:12px}
+body.stage #pts{right:12px}
+body.stage #linescard{display:none}
+body.stage .controls{left:auto;top:0;bottom:0;right:0;flex-direction:column;justify-content:center;border-top:0;border-left:1px solid var(--line);padding:10px calc(8px + env(safe-area-inset-right)) 10px 8px;background:rgba(13,11,20,.72)}
+body.stage .controls .btn{min-width:0;width:72px;height:60px;padding:0;font-size:22px;flex:none}
+body.stage .controls .btn .lb{display:none}
+#b-menu{display:none;position:fixed;top:calc(8px + env(safe-area-inset-top));left:calc(8px + env(safe-area-inset-left));z-index:6;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(23,20,31,.85);color:var(--text);font-size:20px}
+body.stage #b-menu{display:block}
+#drawer{position:fixed;inset:0;z-index:8;display:none}
+#drawer.open{display:block}
+#drawer .bg{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+#drawer .pane{position:absolute;top:0;bottom:0;left:0;width:min(400px,88vw);background:var(--panel);border-right:1px solid var(--line);padding:calc(14px + env(safe-area-inset-top)) 14px 14px max(14px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:10px}
+#drawer .pane .row{flex:none}
+#drawer #lines{max-height:none;flex:1;overflow:auto}
+#rot{display:none}
+@media (orientation:portrait){body.stage #rot{display:block;position:absolute;top:calc(60px + env(safe-area-inset-top));left:0;right:0;text-align:center;font-size:13px;color:var(--muted);pointer-events:none}}
  body.locked header,body.locked main,body.locked .controls{display:none!important}
 #gate{display:none;padding:28px max(16px,env(safe-area-inset-left)) 40px}
 body.locked #gate{display:block}
@@ -252,19 +277,23 @@ details.card>summary{list-style:none}details.card>summary::-webkit-details-marke
       <canvas id="lane"></canvas>
       <div id="hud"><span><span id="recdot">● REC </span><b id="clock">0:00</b> / <span id="dur">0:00</span></span><span>Tom <b id="hudkey">−2</b> · Afinação <b id="live">—</b></span></div>
       <div id="pts">0</div><div id="toast"></div>
+      <div id="rot">↻ Gire o celular para a horizontal</div>
       <div id="lyrics"><div id="lnow">Abra “Arquivos” e escolha o playback e a voz-guia</div><div id="lnext"></div><div id="lhint"></div></div>
     </div>
-    <div class="card" style="margin-top:12px">
-      <h2>Começar de uma linha</h2>
-      <ul id="lines"></ul>
-      <p class="small">O app começa 3 segundos antes da linha escolhida. A gravação guarda o ponto de início no nome do arquivo.</p>
-    </div>
+
   </section>
 </main>
 
+<button id="b-menu" aria-label="Menu">☰</button>
+<div id="drawer"><div class="bg"></div><div class="pane">
+  <div class="row" style="gap:8px"><button class="btn" data-go="letra">📝 Letra</button><button class="btn" data-go="config">⚙️ Arquivos e ajustes</button></div>
+  <h2 style="margin:6px 0 0">Começar de uma frase</h2>
+  <p class="small" style="margin:0">Começa 3 segundos antes da frase escolhida.</p>
+  <ul id="lines"></ul>
+</div></div>
 <div class="controls">
   <button class="btn rec on" id="b-rec" title="Gravar">⏺</button>
-  <button class="btn primary" id="b-play" disabled>▶ Cantar do início</button>
+  <button class="btn primary" id="b-play" disabled><span class="ic">▶</span><span class="lb"> Cantar do início</span></button>
   <button class="btn" id="b-stop" disabled>■</button>
 </div>
 
@@ -313,8 +342,16 @@ $('#sel-key').value=String(S.key);$('#sel-oct').value=String(S.oct);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
   ['cantar','letra','config'].forEach(t=>$('#tab-'+t).classList.toggle('hide',t!==b.dataset.tab));
-  if(b.dataset.tab==='cantar')resize();
+  document.body.classList.toggle('stage',b.dataset.tab==='cantar');
+  if(b.dataset.tab==='cantar')requestAnimationFrame(resize);
 });
+
+document.body.classList.add('stage');
+$('#b-menu').onclick=()=>$('#drawer').classList.add('open');
+$('#drawer .bg').onclick=()=>$('#drawer').classList.remove('open');
+document.querySelectorAll('#drawer [data-go]').forEach(b=>b.onclick=()=>{$('#drawer').classList.remove('open');if(S.playing)stop(true);document.querySelector('nav button[data-tab='+b.dataset.go+']').click()});
+async function goLandscape(){try{if(matchMedia('(pointer:coarse)').matches&&!document.fullscreenElement){await document.documentElement.requestFullscreen({navigationUI:'hide'})}
+  if(screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape')}catch(e){}}
 
 /* ================= áudio ================= */
 function ac(){if(!S.ctx){S.ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});}return S.ctx}
@@ -345,7 +382,7 @@ async function loadGuide(file,fromCache,driveId){
     const sig=(file.name||'')+':'+S.guideBuf.length;
     let g=await idb.get('analysis');
     if(!g||g.sig!==sig){g=await analyzeGuide(S.guideBuf);g.sig=sig;idb.set('analysis',g)}
-    S.guide=g;buildTargets();ready();
+    S.guide=g;alignLyrics();buildTargets();ready();
   }catch(e){msg('Não consegui analisar a voz-guia: '+e.message,true)}}
 $('#f-play').onchange=e=>e.target.files[0]&&loadPlay(e.target.files[0]);
 $('#f-guide').onchange=e=>e.target.files[0]&&loadGuide(e.target.files[0]);
@@ -413,7 +450,7 @@ function buildNotes(f0,rms,hop){
 
 let TG=[],MINM=40,MAXM=70;
 function buildTargets(){if(!S.guide)return;const sh=S.key-S.gkey+S.oct;
-  TG=S.guide.notes.map(x=>({t0:x.t0,t1:x.t1,m:x.m+sh,hit:0,tot:0,dev:0,devn:0}));
+  TG=S.guide.notes.map((x,k)=>({t0:x.t0,t1:x.t1,m:x.m+sh,hit:0,tot:0,dev:0,devn:0,syl:S.nsyl?S.nsyl[k]:null}));
   S.totDur=TG.reduce((a,x)=>a+(x.t1-x.t0>=0.12?x.t1-x.t0:0),0)||1;
   const ms=TG.map(x=>x.m).sort((a,b)=>a-b);
   if(ms.length){MINM=ms[Math.floor(ms.length*0.02)]-3;MAXM=ms[Math.floor(ms.length*0.98)]+3}
@@ -424,12 +461,56 @@ const lyrLines=()=>S.lyrics.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
 function slots(){
   const L=lyrLines(),P=S.guide?S.guide.phrases:[];
   if(S.sync&&S.sync.length){return S.sync.map((t,i)=>({t0:t,t1:i+1<S.sync.length?Math.min(S.sync[i+1],t+12):t+8,text:L[i]||''}))}
+  if(S.lmap&&S.lmap.length)return S.lmap.map((x,i)=>({t0:x.t0,t1:x.t1,text:L[i]||''}));
   const out=[];for(let i=0;i<P.length;i++)out.push({t0:P[i][0],t1:P[i][1],text:L[i]||''});
   return out}
+/* ---------- letra x notas: encaixe automático e sílabas ---------- */
+const VOW=/[aeiouyáéíóúâêîôûãõàèìòùäëïöü]/i;
+function sylls(w){const isV=c=>VOW.test(c);const G=[];let i=0;
+  while(i<w.length){if(isV(w[i])){let j=i;while(j<w.length&&isV(w[j]))j++;G.push([i,j]);i=j}else i++}
+  if(G.length>1){const lg=G[G.length-1];if(lg[0]===w.length-1&&/e/i.test(w[w.length-1])&&!isV(w[w.length-2]||'a'))G.pop()}
+  if(G.length<=1)return [w];
+  const DG=/^(th|ch|sh|ph|wh|nh|lh|qu|gu)$/i;const out=[];let st=0;for(let k=0;k<G.length-1;k++){const a=G[k][1],b=G[k+1][0],c=b-a;let cut=c<=1?a:a+Math.floor(c/2);if(c>=2&&DG.test(w.slice(b-2,b)))cut=b-2;out.push(w.slice(st,cut));st=cut}
+  out.push(w.slice(st));return out.filter(Boolean)}
+function lineSyl(t){const W=t.replace(/[^\p{L}'’]+/gu,' ').trim().split(/\s+/).filter(Boolean);return W.flatMap(w=>{const a=sylls(w);return a.map((x,k)=>({s:x,wEnd:k===a.length-1}))})}
+function stretch(txt,d){if(d<0.7)return txt;const k=Math.min(6,Math.round(d/0.25));let p=-1;const lim=(txt.length>2&&/e$/i.test(txt)&&!VOW.test(txt[txt.length-2]))?txt.length-2:txt.length-1;for(let i=lim;i>=0;i--)if(VOW.test(txt[i])){p=i;break}
+  return p<0?txt:txt.slice(0,p+1)+txt[p].repeat(k-1)+txt.slice(p+1)}
+function alignLyrics(){S.lmap=null;S.nsyl=null;const L=lyrLines();if(!S.guide||!L.length)return;
+  const N=S.guide.notes,n=N.length;if(!n)return;
+  const SY=L.map(lineSyl),cnt=SY.map(a=>Math.max(1,a.length)),nl=L.length;
+  const gap=k=>k<=0||k>=n?2:N[k].t0-N[k-1].t1;
+  const lgp=new Int32Array(n+1);for(let k=1;k<=n;k++)lgp[k]=lgp[k-1]+(k<n&&gap(k)>1.2?1:0);
+  const SKIP=0.4,MAXL=70,INF=1e15;
+  const D=new Float64Array((nl+1)*(n+1)).fill(INF),B=new Int32Array((nl+1)*(n+1)).fill(-1),id=(l,i)=>l*(n+1)+i;
+  for(let i=0;i<=n;i++)D[id(0,i)]=i*SKIP*0.5;
+  for(let l=0;l<nl;l++)for(let i=0;i<=n;i++){const v=D[id(l,i)];if(v>=INF)continue;
+    if(i<n&&l>0&&v+SKIP<D[id(l,i+1)]){D[id(l,i+1)]=v+SKIP;B[id(l,i+1)]=-2}
+    const Sy=cnt[l];
+    for(let j=i+1;j<=Math.min(n,i+MAXL);j++){const len=j-i,df=len-Sy;
+      let c=df>=0?0.6*df/Sy:1.8*(-df)/Sy;c+=1.5*(lgp[j-1]-lgp[i]);
+      c-=0.8*Math.min(gap(i),4)+0.5*Math.min(gap(j),2);
+      const dur=N[j-1].t1-N[i].t0,lim=Sy*0.55+3.5;if(dur>lim)c+=0.8+(dur-lim)*0.5;
+      const w=v+c;if(w<D[id(l+1,j)]){D[id(l+1,j)]=w;B[id(l+1,j)]=i}}}
+  let bi=n,bv=INF;for(let i=0;i<=n;i++){const w=D[id(nl,i)]+(n-i)*SKIP*0.5;if(w<bv){bv=w;bi=i}}
+  if(bv>=INF)return;
+  const seg=new Array(nl);let l=nl,i=bi;
+  while(l>0){const b=B[id(l,i)];if(b===-2){i--;continue}seg[l-1]=[b,i];i=b;l--}
+  S.lmap=seg.map(([a,b])=>({t0:N[a].t0,t1:N[b-1].t1,i0:a,i1:b}));
+  const ns=new Array(n).fill(null);
+  seg.forEach(([a,b],li)=>{const sy=SY[li];const m=b-a,k=sy.length;if(!k)return;
+    const groups=[];
+    if(m>=k){let si=0;for(let x=a;x<b;x++){if(x===a){groups.push({si:0,ns:[x]});continue}
+        const restN=b-x,restS=k-1-si,g=N[x].t0-N[x-1].t1;
+        if(restS<=0||(restN>restS&&g<0.15))groups[groups.length-1].ns.push(x);else{si++;groups.push({si,ns:[x]})}}}
+    else{for(let j=0;j<m;j++){const s0=Math.floor(j*k/m),s1=Math.floor((j+1)*k/m);groups.push({si:s0,si1:s1,ns:[a+j]})}}
+    for(const G of groups){const s1=G.si1==null?G.si+1:G.si1;let txt='';for(let q=G.si;q<s1;q++){txt+=sy[q].s+(sy[q].wEnd&&q<s1-1?' ':'')}
+      const d=G.ns.reduce((acc,x)=>acc+N[x].t1-N[x].t0,0),end=N[G.ns[G.ns.length-1]].t1;
+      G.ns.forEach((x,q)=>ns[x]={txt:q?'':stretch(txt,d),cont:q>0,end})}});
+  S.nsyl=ns}
 $('#ta').value=S.lyrics;
 const lyrStatus=()=>{const L=lyrLines().length,P=S.guide?S.guide.phrases.length:0;
-  $('#st-lyr').textContent=L?`${L} linhas coladas · ${S.sync?'sincronizadas por você':P+' frases detectadas na guia (encaixe automático)'}`:'Sem letra: o app mostra as frases como “♪ frase 1, 2…”.'};
-$('#ta').oninput=e=>{S.lyrics=e.target.value;store.set('lyrics',S.lyrics);lyrStatus();renderLines()};
+  $('#st-lyr').textContent=L?`${L} linhas · ${S.sync?'sincronizadas por você':S.lmap?'encaixadas automaticamente nas notas da guia':'aguardando a voz-guia para encaixar'}`:'Sem letra: o app mostra as frases como “♪ frase 1, 2…”.'};
+let lyrT=0;$('#ta').oninput=e=>{S.lyrics=e.target.value;store.set('lyrics',S.lyrics);clearTimeout(lyrT);lyrT=setTimeout(()=>{alignLyrics();buildTargets();lyrStatus();renderLines();if(!S.playing)idle()},400)};
 lyrStatus();
 function renderLines(){
   lyrStatus();const ul=$('#lines');ul.innerHTML='';
@@ -437,6 +518,7 @@ function renderLines(){
     li.innerHTML=`<span class="t">${fmt(s.t0)}</span><span class="x"></span><span class="acc"></span><button>▶</button>`;
     li.querySelector('.x').textContent=s.text||('♪ frase '+(i+1));
     li.querySelector('button').onclick=()=>start(Math.max(0,s.t0-3));
+    li.querySelector('.x').onclick=()=>start(Math.max(0,s.t0-3));
     li.dataset.i=i;ul.appendChild(li)})}
 
 /* ---------- sincronizar por toque ---------- */
@@ -448,7 +530,7 @@ $('#b-sync').onclick=async()=>{if(!S.playBuf){alert('Escolha o playback primeiro
 $('#tapbtn').onclick=()=>{if(!S.playing)return;const L=lyrLines();S.syncTimes.push(songTime());
   const k=S.syncTimes.length;$('#tapbtn').textContent=k<L.length?`Linha ${k+1}: “${L[k].slice(0,40)}”`:'Pronto! Toque em ■';
   if(k>=L.length)stop()};
-$('#b-unsync').onclick=()=>{S.sync=null;store.set('sync',null);renderLines();$('#st-sync').textContent='Voltou ao encaixe automático.'};
+$('#b-unsync').onclick=()=>{S.sync=null;store.set('sync',null);alignLyrics();buildTargets();renderLines();$('#st-sync').textContent='Voltou ao encaixe automático.'};
 
 /* ---------- microfone + gravação ---------- */
 const workletSrc=`class Rec extends AudioWorkletProcessor{constructor(){super();this.start=1e12;this.stop=1e12;this.port.onmessage=e=>{if(e.data.start!=null)this.start=e.data.start;if(e.data.stop!=null)this.stop=e.data.stop}}
@@ -515,6 +597,7 @@ $('#b-cal').onclick=async()=>{
 const latency=()=>{const v=+latEl.value;if(v>0)return v/1000;const c=S.ctx;return (c.outputLatency||0)+(c.baseLatency||0)};
 function songTime(){if(!S.playing)return S.offset;return S.ctx.currentTime-S.t0ctx+S.offset}
 async function start(from,opt={}){
+  $('#drawer').classList.remove('open');if(document.body.classList.contains('stage'))goLandscape();
   if(!S.playBuf)return;const c=ac();if(c.state!=='running')await c.resume();
   if(S.playing)stop(true);
   const doRec=S.recOn&&!opt.noRec;
@@ -530,13 +613,13 @@ async function start(from,opt={}){
   S.recording=false;S.recChunks=[];
   if(doRec&&S.rec){S.recording=true;S.recStartSong=from;S.rec.port.postMessage({start:when,stop:1e12})}
   $('#recdot').classList.toggle('on',S.recording);
-  $('#b-stop').disabled=false;$('#b-play').textContent='↻ Recomeçar';
+  $('#b-stop').disabled=false;$('#b-play').innerHTML='<span class="ic">↻</span><span class="lb"> Recomeçar</span>';
   requestAnimationFrame(loop)}
 function stop(silent){
   if(!S.playing)return;const endSong=songTime();S.playing=false;
   try{S.src.stop()}catch(e){}try{S.gsrc&&S.gsrc.stop()}catch(e){}
   if(S.rec)S.rec.port.postMessage({stop:S.ctx.currentTime});
-  $('#recdot').classList.remove('on');$('#b-stop').disabled=true;$('#b-play').textContent='▶ Cantar do início';
+  $('#recdot').classList.remove('on');$('#b-stop').disabled=true;$('#b-play').innerHTML='<span class="ic">▶</span><span class="lb"> Cantar do início</span>';
   S.offset=0;
   if(S.syncMode){S.syncMode=false;$('#tapbtn').classList.add('hide');
     if(S.syncTimes.length){S.sync=S.syncTimes.slice();store.set('sync',S.sync);$('#st-sync').textContent=`Salvo: ${S.syncTimes.length} linhas sincronizadas.`;renderLines()}
@@ -588,8 +671,8 @@ $('#b-close').onclick=()=>$('#result').classList.add('hide');
 const cv=$('#lane'),g=cv.getContext('2d');let DPR=1,CW=0,CH=0;
 function resize(){DPR=window.devicePixelRatio||1;const r=cv.getBoundingClientRect();CW=r.width;CH=r.height;cv.width=CW*DPR;cv.height=CH*DPR;g.setTransform(DPR,0,0,DPR,0,0);if(!S.playing)idle()}
 window.addEventListener('resize',resize);
-const PPS=()=>Math.max(90,CW/4.2);
-function yOf(m){const top=34,bot=CH-10;return bot-(m-MINM)/(MAXM-MINM)*(bot-top)}
+const PPS=()=>Math.max(90,CW>CH*1.3?CW/3.3:CW/4.2);
+function yOf(m){const top=58,bot=CH-(document.body.classList.contains('stage')?Math.max(70,CH*0.2):10);return bot-(m-MINM)/(MAXM-MINM)*(bot-top)}
 function draw(t,live){
   g.clearRect(0,0,CW,CH);const nowX=CW*0.26,pps=PPS();
   // grade de notas
@@ -604,6 +687,14 @@ function draw(t,live){
     const active=n.t0<=t&&n.t1>=t;let col=active?'#b9a4ff':'#4b3d72';
     if(n.t1<t&&n.tot>0)col=n.hit/n.tot>=0.4?'#2fbf83':'#a84a5a';
     g.fillStyle=col;rr(x0,y-h/2,Math.max(3,x1-x0),h,h/2);}
+  // sílabas em cima das notas
+  const fs=Math.round(Math.max(13,Math.min(20,CH/22)));g.font='700 '+fs+'px system-ui';g.textAlign='left';g.textBaseline='bottom';
+  let lastEnd=-1e9;
+  for(const n of TG){if(n.t1<t-2)continue;if(n.t0>t+5)break;const sy=n.syl;if(!sy||sy.cont||!sy.txt)continue;
+    const x0=nowX+(n.t0-t)*pps,y=yOf(n.m)-h/2-4;const x=Math.max(x0,lastEnd+4);const w=g.measureText(sy.txt).width;
+    const act=t>=n.t0-0.05&&t<=sy.end;g.fillStyle=act?'#ff4f9a':(sy.end<t?'rgba(255,255,255,.4)':'#fff');
+    g.fillText(sy.txt,x,y);lastEnd=x+w}
+  g.textBaseline='alphabetic';
   // linha do agora
   g.fillStyle='rgba(255,79,154,0.9)';g.fillRect(nowX-1,26,2,CH-30);
   // rastro da voz
@@ -719,7 +810,7 @@ async function gdLoad(id,name){
     else{gdMsg('Baixando o playback (só desta vez)…');gdProg(0.1);await loadPlay(new File([await gdBlob(pf.id)],pf.name),false,pf.id)}
     if(cg&&cg.driveId===gf.id&&S.guide&&S.guideBuf){} else if(cg&&cg.driveId===gf.id){await loadGuide(new File([cg.blob],cg.name),true)}
     else{gdMsg('Baixando a voz-guia (só desta vez)…');gdProg(0.5);await loadGuide(new File([await gdBlob(gf.id)],gf.name),false,gf.id)}
-    const lf=files.find(f=>f.name==='letra.txt');if(lf&&!S.lyrics.trim()){const t=await (await gdBlob(lf.id)).text();S.lyrics=t;store.set('lyrics',t);$('#ta').value=t}
+    const lf=files.find(f=>f.name==='letra.txt');if(lf&&!S.lyrics.trim()){const t=await (await gdBlob(lf.id)).text();S.lyrics=t;store.set('lyrics',t);$('#ta').value=t;alignLyrics();buildTargets()}
     const sf=files.find(f=>f.name==='sincronizacao.json');if(sf&&!S.sync){try{S.sync=JSON.parse(await (await gdBlob(sf.id)).text());store.set('sync',S.sync)}catch(e){}}
     GD.cur={id,name};store.set('gd_last',{id,name});gdProg(1);renderLines();updateCur();gdMsg('Pronto: “'+name+'” ('+tom+') está neste celular.')}
   catch(e){gdMsg('Erro ao carregar: '+e.message,true)}}
