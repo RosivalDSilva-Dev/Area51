@@ -80,9 +80,66 @@ textarea{width:100%;min-height:42vh;background:var(--panel2);color:var(--text);b
 #worst{text-align:left;font-size:13px;color:var(--muted);margin:0 0 14px;padding-left:18px}
 .chip{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted);margin:2px}
 #tapbtn{width:100%;padding:26px;font-size:20px;margin-top:10px}
+ body.locked header,body.locked main,body.locked .controls{display:none!important}
+#gate{display:none;padding:28px max(16px,env(safe-area-inset-left)) 40px}
+body.locked #gate{display:block}
+#gate .wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+#gate .hero{display:flex;gap:16px;align-items:center}
+#gate h1{font-size:clamp(26px,6vw,38px);margin:0;line-height:1.1}#gate h1 span{color:var(--accent)}
+#gate .lead{color:var(--muted);font-size:15px;line-height:1.55;margin:4px 0 0}
+#gate h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.feat div{background:var(--panel2);border-radius:12px;padding:12px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.feat b{display:block;color:var(--text);font-size:14px;margin-bottom:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+#tuner{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+#t-note{font-size:44px;font-weight:900;min-width:110px;text-align:center;font-variant-numeric:tabular-nums}
+#t-meter{position:relative;height:14px;background:var(--panel2);border-radius:99px}
+#t-meter i{position:absolute;top:-4px;width:6px;height:22px;border-radius:4px;background:var(--accent);left:50%;transform:translateX(-50%);transition:left .08s}
+#t-meter:before{content:"";position:absolute;left:50%;top:-6px;bottom:-6px;width:2px;background:var(--ok);transform:translateX(-50%)}
+#t-cents{font-size:13px;color:var(--muted);margin-top:8px}
+.restrito{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.sig{font-size:13px;color:var(--muted)}.sig a{color:var(--target-on)}
+.cur{display:flex;flex-direction:column;gap:4px;background:var(--panel2);border-radius:12px;padding:12px 14px}
+.cur b{font-size:18px}.cur span{font-size:13px;color:var(--muted)}.cur.ok{border:1px solid var(--ok)}
+details.card>summary{list-style:none}details.card>summary::-webkit-details-marker{display:none}
 </style>
 </head>
-<body>
+<body class="locked">
+<div id="gate"><div class="wrap">
+  <div class="hero">
+    <svg width="64" height="64" viewBox="0 0 512 512" aria-hidden="true" style="flex:none"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff4f9a"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="#17141f"/><rect x="206" y="96" width="100" height="190" rx="50" fill="url(#gg)"/><path d="M156 246a100 100 0 0 0 200 0" fill="none" stroke="url(#gg)" stroke-width="26" stroke-linecap="round"/><rect x="243" y="346" width="26" height="60" rx="13" fill="url(#gg)"/><rect x="186" y="398" width="140" height="24" rx="12" fill="url(#gg)"/></svg>
+    <div><h1>Karaokê <span>Studio</span></h1>
+    <p class="lead">Treino de canto com avaliação de afinação em tempo real, direto no navegador do celular, sem instalar nada.</p></div>
+  </div>
+  <div class="card">
+    <h3>Experimente: afinador ao vivo</h3>
+    <div id="tuner"><div id="t-note">—</div><div><div id="t-meter"><i id="t-dot"></i></div><div id="t-cents">Toque em “Ligar microfone” e cante ou assobie uma nota.</div></div></div>
+    <button class="btn" id="t-btn" style="margin-top:12px">🎤 Ligar microfone</button>
+    <p class="small" style="margin-top:8px">O som é analisado só no seu aparelho; nada é gravado nem enviado.</p>
+  </div>
+  <div class="card">
+    <h3>O que o app faz</h3>
+    <div class="feat">
+      <div><b>Guia de afinação</b>Extrai a melodia de uma voz de referência e desenha as notas na tela, como nos jogos de karaokê.</div>
+      <div><b>Detecção de altura</b>Algoritmo YIN rodando a cada quadro para saber a nota cantada, com tolerância de oitava.</div>
+      <div><b>Pontuação</b>Placar ao vivo, avaliação de cada frase e relatório das linhas para treinar.</div>
+      <div><b>Gravação alinhada</b>Grava o microfone sincronizado com a música, com calibração de atraso para fone Bluetooth.</div>
+      <div><b>Troca de tom</b>Versões transpostas da música, com a guia acompanhando o tom escolhido.</div>
+      <div><b>Dados privados</b>Músicas e gravações ficam no Google Drive do usuário; o site público não guarda nada.</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Tecnologias</h3>
+    <div class="chips"><span class="chip">Web Audio API</span><span class="chip">AudioWorklet</span><span class="chip">Web Workers</span><span class="chip">Algoritmo YIN</span><span class="chip">Canvas 2D</span><span class="chip">IndexedDB</span><span class="chip">PWA</span><span class="chip">Google Identity Services</span><span class="chip">Google Drive API</span><span class="chip">GitHub Pages</span><span class="chip">JavaScript puro</span></div>
+  </div>
+  <div class="card restrito">
+    <div><h3 style="margin:0">Área restrita</h3><p class="small" style="margin:4px 0 0">As músicas e as gravações são acessadas só pela conta do dono.</p></div>
+    <button class="btn primary" id="gate-btn" style="max-width:none">🔐 Entrar com Google</button>
+    <div class="status" id="gate-st" style="width:100%"></div>
+  </div>
+  <p class="sig">Projeto de <a href="https://github.com/RosivalDSilva-Dev" target="_blank" rel="noopener">Rosival D. Silva</a>, desenvolvedor e analista de sistemas.</p>
+</div></div>
 <header>
   <h1>Karaokê <span>Studio</span></h1>
   <div class="sp"></div>
@@ -96,38 +153,41 @@ textarea{width:100%;min-height:42vh;background:var(--panel2);color:var(--text);b
   <!-- ARQUIVOS -->
   <section id="tab-config" class="hide">
     <div class="card">
-      <h2>Suas músicas no Google Drive</h2>
-      <p class="small">Os áudios, a letra e as suas gravações ficam numa pasta <b>privada</b> do seu Google Drive (“Karaokê Studio”). Este site é público, mas só enxerga essa pasta depois que você entra com a sua conta Google.</p>
-      <div class="row">
+      <h2>Sua música</h2>
+      <div id="cur-song" class="cur"><b>Nenhuma música ainda</b><span>Entre com o Google e escolha uma música do seu Drive.</span></div>
+      <div class="row" style="margin-top:10px">
         <button class="btn" id="gd-login">🔐 Entrar com Google</button>
-        <span class="small" id="gd-who"></span>
       </div>
       <div class="row hide" id="gd-songrow" style="margin-top:10px">
         <select id="gd-song"></select>
-        <button class="btn primary" id="gd-load" style="max-width:none">⬇️ Carregar música</button>
+        <button class="btn primary" id="gd-load" style="max-width:none">⬇️ Usar esta música</button>
       </div>
-      <details class="hide" id="gd-add" style="margin-top:12px">
-        <summary class="small" style="cursor:pointer">➕ Adicionar uma música ao Drive</summary>
-        <div class="row" style="margin-top:10px">
+      <div class="status" id="st-gd"></div>
+      <div class="bar"><i id="gdpb"></i></div>
+      <p class="small">Depois de baixada, a música fica guardada neste celular: nas próximas vezes o app já abre pronto, sem baixar de novo. Ao trocar o tom em Ajustes, ele busca sozinho a versão certa no Drive.</p>
+    </div>
+    <details class="card" id="more">
+      <summary class="small" style="cursor:pointer">⚙️ Mais opções: adicionar música ao Drive ou usar arquivos do celular</summary>
+      <div style="margin-top:12px">
+        <h2>Adicionar uma música ao Drive</h2>
+        <div class="row">
           <div class="field">Nome da música <input class="txt" id="gd-newname" placeholder="Ex.: nome da música"></div>
           <label class="file" id="lf-gdfiles"><b>📁 Arquivos</b><small>playbacks e vozes-guia (pode escolher vários)</small><input type="file" accept="audio/*" multiple id="gd-files"></label>
         </div>
         <button class="btn" id="gd-upload" style="margin-top:10px">☁️ Enviar para o Drive</button>
-      </details>
-      <div class="status" id="st-gd"></div>
-      <div class="bar"><i id="gdpb"></i></div>
-    </div>
-    <div class="card">
-      <h2>Ou escolha os arquivos do celular</h2>
-      <div class="row">
-        <label class="file" id="lf-play"><b>🎵 Playback</b><small>instrumental + back vocal (o tom vem no nome do arquivo)</small><input type="file" accept="audio/*" id="f-play"></label>
-        <label class="file" id="lf-guide"><b>🎤 Voz-guia</b><small>voz principal isolada, no mesmo tom do playback</small><input type="file" accept="audio/*" id="f-guide"></label>
       </div>
-      <div class="status" id="st-files">Escolha os dois arquivos. Eles ficam guardados neste celular para as próximas vezes.</div>
-      <div class="bar"><i id="pb"></i></div>
-    </div>
+      <div style="margin-top:18px">
+        <h2>Usar arquivos do celular (sem Drive)</h2>
+        <div class="row">
+          <label class="file" id="lf-play"><b>🎵 Playback</b><small>instrumental + back vocal (o tom vem no nome do arquivo)</small><input type="file" accept="audio/*" id="f-play"></label>
+          <label class="file" id="lf-guide"><b>🎤 Voz-guia</b><small>voz principal isolada, no mesmo tom do playback</small><input type="file" accept="audio/*" id="f-guide"></label>
+        </div>
+        <div class="status" id="st-files"></div>
+        <div class="bar"><i id="pb"></i></div>
+      </div>
+    </details>
     <div class="card">
-      <h2>2. Ajustes</h2>
+      <h2>Ajustes</h2>
       <div class="row">
         <div class="field">Tom do playback
           <select id="sel-key">
@@ -158,7 +218,7 @@ textarea{width:100%;min-height:42vh;background:var(--panel2);color:var(--text);b
       <p class="small">Com fone Bluetooth, use o microfone do celular: o microfone do fone grava com qualidade de ligação. O Bluetooth atrasa o som em 150–300 ms, por isso <b>calibre o atraso</b> uma vez por fone.</p>
     </div>
     <div class="card">
-      <h2>3. Calibrar atraso (fone Bluetooth)</h2>
+      <h2>Calibrar atraso (fone Bluetooth)</h2>
       <p class="small">Com o fone conectado, toque em Calibrar. Você vai ouvir 8 batidas: diga <b>“tá”</b> junto com cada uma, no ritmo. O app mede o atraso sozinho.</p>
       <button class="btn" id="b-cal">🎧 Calibrar</button>
       <div class="status" id="st-cal"></div>
@@ -242,6 +302,7 @@ const idb={db:null,async open(){if(this.db)return this.db;this.db=await new Prom
   async set(k,v){try{const db=await this.open();await new Promise(res=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=res;tx.onerror=res})}catch(e){}}};
 
 /* ================= estado ================= */
+const TOM={0:'tom original','-1':'meio tom abaixo','-2':'1 tom abaixo','1':'meio tom acima','2':'1 tom acima'};
 const S={ctx:null,playBuf:null,guideBuf:null,guide:null,playName:'',gkey:0,key:+store.get('key',-2),oct:+store.get('oct',-12),
   lyrics:store.get('lyrics',''),sync:store.get('sync',null),
   playing:false,src:null,gsrc:null,t0ctx:0,offset:0,recOn:true,rec:null,recChunks:[],recStartSong:0,mic:null,an:null,
@@ -263,18 +324,23 @@ function keyFromName(n){n=n.toLowerCase();
   if(/1\s*tom\s*acima|\+2/.test(n))return 2; if(/meio\s*tom\s*acima|\+1/.test(n))return 1;
   if(/original/.test(n))return 0; return null}
 const setProg=p=>$('#pb').style.width=(p*100).toFixed(0)+'%';
-function msg(t,err){const e=$('#st-files');e.textContent=t;e.classList.toggle('err',!!err)}
+function msg(t,err){const e=$('#st-files');e.textContent=t;e.classList.toggle('err',!!err);if(err)gdMsg(t,true)}
+function updateCur(){const last=store.get('gd_last',null);const el=$('#cur-song');const ok=!!(S.playBuf&&S.guide);
+  const name=(GD.cur&&GD.cur.name)||(last&&last.name)||(S.playBuf?'Arquivos do celular':'');
+  if(!name){return}
+  el.classList.toggle('ok',ok);el.innerHTML='';const b=document.createElement('b');b.textContent=name+' · '+(TOM[S.key]||'');const sp=document.createElement('span');
+  sp.textContent=ok?'Pronta neste celular: é só ir em Cantar.':'Ainda não carregada neste tom.';el.append(b,sp)}
 
-async function loadPlay(file,fromCache){
+async function loadPlay(file,fromCache,driveId){
   try{msg('Lendo o playback…');S.playBuf=await decode(file);S.playName=file.name||'playback';
     $('#lf-play').classList.add('ok');$('#lf-play small').textContent=S.playName+' · '+fmt(S.playBuf.duration);
     const k=keyFromName(S.playName);if(k!=null){S.key=k;$('#sel-key').value=String(k);store.set('key',k)}
-    if(!fromCache)idb.set('play',{name:S.playName,blob:file});ready();
+    if(!fromCache)await idb.set('play',{name:S.playName,blob:file,driveId:driveId||null});ready();
   }catch(e){msg('Não consegui ler o playback: '+e.message,true)}}
-async function loadGuide(file,fromCache){
+async function loadGuide(file,fromCache,driveId){
   try{msg('Lendo a voz-guia…');S.guideBuf=await decode(file);
     $('#lf-guide').classList.add('ok');$('#lf-guide small').textContent=(file.name||'guia')+' · '+fmt(S.guideBuf.duration);
-    if(!fromCache)idb.set('guide',{name:file.name,blob:file});
+    if(!fromCache)await idb.set('guide',{name:file.name,blob:file,driveId:driveId||null});
     const gk=keyFromName(file.name||'');S.gkey=gk==null?0:gk;
     const sig=(file.name||'')+':'+S.guideBuf.length;
     let g=await idb.get('analysis');
@@ -283,7 +349,7 @@ async function loadGuide(file,fromCache){
   }catch(e){msg('Não consegui analisar a voz-guia: '+e.message,true)}}
 $('#f-play').onchange=e=>e.target.files[0]&&loadPlay(e.target.files[0]);
 $('#f-guide').onchange=e=>e.target.files[0]&&loadGuide(e.target.files[0]);
-$('#sel-key').onchange=e=>{S.key=+e.target.value;store.set('key',S.key);buildTargets();$('#hudkey').textContent=keyLabel()};
+$('#sel-key').onchange=e=>{S.key=+e.target.value;store.set('key',S.key);buildTargets();$('#hudkey').textContent=keyLabel();updateCur();if(GD.cur)gdLoad(GD.cur.id,GD.cur.name)};
 $('#sel-oct').onchange=e=>{S.oct=+e.target.value;store.set('oct',S.oct);buildTargets()};
 $('#vol').oninput=e=>{if(S.gain)S.gain.gain.value=+e.target.value};
 const gv=$('#gvol');gv.value=store.get('gvol',0.6);
@@ -295,7 +361,7 @@ const keyLabel=()=>({0:'original','-1':'½ tom ↓','-2':'1 tom ↓','1':'½ tom
 $('#hudkey').textContent=keyLabel();
 
 function ready(){
-  const ok=S.playBuf&&S.guide;
+  const ok=S.playBuf&&S.guide;try{updateCur()}catch(e){}
   $('#b-play').disabled=!ok;
   if(S.playBuf)$('#dur').textContent=fmt(S.playBuf.duration);
   if(ok){msg('Pronto! '+S.guide.notes.length+' notas e '+S.guide.phrases.length+' frases encontradas na guia.'+(S.key!==S.gkey?' Atenção: a voz-guia está em outro tom, por isso ela fica muda no fone (a linha de afinação continua certa).':''));setProg(1);renderLines();idle();
@@ -581,11 +647,10 @@ function rateLine(s){S.curLine=-1;let n=0,h=0;
 /* ================= Google Drive (pasta privada) ================= */
 const GD_CLIENT_ID='454225852685-rbag23nf7kn37tr47j27eim2knbhpsuv.apps.googleusercontent.com';
 const GD_SCOPE='https://www.googleapis.com/auth/drive.file';
-const GD={tok:null,exp:0,client:null,root:null,songs:[],cur:null,pend:null};
-const TOM={0:'tom original','-1':'meio tom abaixo','-2':'1 tom abaixo','1':'meio tom acima','2':'1 tom acima'};
+const GD={tok:null,exp:0,client:null,root:null,songs:[],cur:(()=>{const l=store.get('gd_last',null);return l?{id:l.id,name:l.name}:null})(),pend:null};
 function gdMsg(t,err){const e=$('#st-gd');e.textContent=t;e.classList.toggle('err',!!err)}
 const gdProg=p=>$('#gdpb').style.width=(p*100).toFixed(0)+'%';
-try{const t=JSON.parse(sessionStorage.getItem('gd_tok')||'null');if(t&&t.exp>Date.now()+60000){GD.tok=t.tok;GD.exp=t.exp}}catch(e){}
+try{const t=JSON.parse(localStorage.getItem('gd_tok')||sessionStorage.getItem('gd_tok')||'null');if(t&&t.exp>Date.now()+60000){GD.tok=t.tok;GD.exp=t.exp}}catch(e){}
 function gisReady(){return new Promise((res,rej)=>{let n=0;(function w(){if(window.google&&google.accounts&&google.accounts.oauth2)return res();if(++n>75)return rej(new Error('o login do Google não carregou (bloqueador de conteúdo?)'));setTimeout(w,200)})()})}
 async function gdToken(interactive){
   if(GD.tok&&GD.exp>Date.now()+60000)return GD.tok;
@@ -595,13 +660,13 @@ async function gdToken(interactive){
     GD.client=google.accounts.oauth2.initTokenClient({client_id:GD_CLIENT_ID,scope:GD_SCOPE,prompt:'',
       callback:r=>{if(r.error){rej(new Error(r.error_description||r.error));return}
         GD.tok=r.access_token;GD.exp=Date.now()+(+r.expires_in||3600)*1000;
-        try{sessionStorage.setItem('gd_tok',JSON.stringify({tok:GD.tok,exp:GD.exp}))}catch(e){}res(GD.tok)},
+        try{localStorage.setItem('gd_tok',JSON.stringify({tok:GD.tok,exp:GD.exp}))}catch(e){}res(GD.tok)},
       error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'janela de login fechada':'login cancelado'))});
     GD.client.requestAccessToken()})}
 async function gd(url,opt={},interactive){
   const tok=await gdToken(interactive);
   const r=await fetch(url.startsWith('http')?url:'https://www.googleapis.com/drive/v3/'+url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+tok}});
-  if(r.status===401){GD.tok=null;try{sessionStorage.removeItem('gd_tok')}catch(e){}throw new Error('sessão do Google expirou: toque em “Entrar com Google”')}
+  if(r.status===401){GD.tok=null;try{sessionStorage.removeItem('gd_tok');localStorage.removeItem('gd_tok')}catch(e){}throw new Error('sessão do Google expirou: toque em “Entrar com Google”')}
   if(!r.ok){let m='erro '+r.status;try{const j=await r.json();m=(j.error&&j.error.message)||m}catch(e){}
     if(/has not been used|is disabled/i.test(m))m='a API do Google Drive não está ativada no projeto do Google Cloud';throw new Error(m)}
   return r}
@@ -632,8 +697,8 @@ async function gdRefresh(){const root=await gdRoot();
   GD.songs=await gdFind(`'${root}' in parents and mimeType='application/vnd.google-apps.folder'`);
   const sel=$('#gd-song');sel.innerHTML='';GD.songs.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;sel.appendChild(o)});
   const last=store.get('gd_song','');if(GD.songs.some(f=>f.id===last))sel.value=last;
-  $('#gd-songrow').classList.toggle('hide',!GD.songs.length);$('#gd-add').classList.remove('hide');if(!GD.songs.length)$('#gd-add').open=true;
-  gdMsg(GD.songs.length?`${GD.songs.length} música(s) na sua pasta “Karaokê Studio”. Escolha o tom em Ajustes e toque em Carregar.`:'Sua pasta “Karaokê Studio” foi criada no Drive. Adicione a primeira música abaixo.')}
+  $('#gd-songrow').classList.toggle('hide',!GD.songs.length);if(GD.cur&&GD.songs.some(f=>f.id===GD.cur.id))sel.value=GD.cur.id;if(!GD.songs.length)$('#more').open=true;
+  gdMsg(GD.songs.length?`${GD.songs.length} música(s) no seu Drive.`:'Sua pasta “Karaokê Studio” foi criada no Drive. Adicione a primeira música abaixo.')}
 $('#gd-login').onclick=async()=>{try{gdMsg('Abrindo o login do Google…');await gdToken(true);$('#gd-login').textContent='✅ Conectado ao Google';$('#gd-savelyr').classList.remove('hide');await gdRefresh()}catch(e){gdMsg('Não entrou: '+e.message,true)}};
 $('#gd-files').onchange=e=>{const n=e.target.files.length;$('#lf-gdfiles small').textContent=n?n+' arquivo(s) escolhido(s)':'playbacks e vozes-guia (pode escolher vários)';$('#lf-gdfiles').classList.toggle('ok',n>0)};
 $('#gd-upload').onclick=async()=>{const name=$('#gd-newname').value.trim(),files=[...$('#gd-files').files];
@@ -644,17 +709,21 @@ $('#gd-upload').onclick=async()=>{const name=$('#gd-newname').value.trim(),files
       await gdUpload(f.name,f,folder,ex&&ex.id,p=>gdProg((i+p)/files.length))}
     gdProg(1);store.set('gd_song',folder);await gdRefresh();gdMsg(`Pronto: “${name}” está no seu Drive.`)}catch(e){gdMsg('Erro ao enviar: '+e.message,true)}};
 async function gdBlob(id){return await (await gd('files/'+id+'?alt=media')).blob()}
-$('#gd-load').onclick=async()=>{const id=$('#gd-song').value;const song=GD.songs.find(f=>f.id===id);if(!song)return;store.set('gd_song',id);
-  try{gdMsg('Procurando os arquivos de “'+song.name+'”…');const files=await gdFind(`'${id}' in parents`);const tom=TOM[S.key];
+async function gdLoad(id,name){
+  try{gdMsg('Procurando os arquivos de “'+name+'”…');const files=await gdFind(`'${id}' in parents`);const tom=TOM[S.key];
     const find=pre=>files.find(f=>f.name.toLowerCase().includes(pre)&&f.name.toLowerCase().includes(tom));
     const pf=find('playback'),gf=find('voz-guia');
-    if(!pf||!gf){gdMsg(`Não achei “Playback - ${tom}” e “Voz-guia - ${tom}” nessa música. Troque o tom em Ajustes ou adicione os arquivos.`,true);return}
-    gdMsg('Baixando o playback…');gdProg(0.1);await loadPlay(new File([await gdBlob(pf.id)],pf.name));
-    gdMsg('Baixando a voz-guia…');gdProg(0.5);await loadGuide(new File([await gdBlob(gf.id)],gf.name));
-    const lf=files.find(f=>f.name==='letra.txt');if(lf){const t=await (await gdBlob(lf.id)).text();S.lyrics=t;store.set('lyrics',t);$('#ta').value=t}
-    const sf=files.find(f=>f.name==='sincronizacao.json');if(sf){try{S.sync=JSON.parse(await (await gdBlob(sf.id)).text());store.set('sync',S.sync)}catch(e){}}
-    GD.cur={id,name:song.name};gdProg(1);renderLines();gdMsg('Pronto: “'+song.name+'” ('+tom+') carregada do seu Drive.')}
-  catch(e){gdMsg('Erro ao carregar: '+e.message,true)}};
+    if(!pf||!gf){gdMsg(`Essa música ainda não tem a versão “${tom}” no Drive. Escolha outro tom em Ajustes ou peça para adicionar.`,true);return}
+    const cp=await idb.get('play'),cg=await idb.get('guide');
+    if(cp&&cp.driveId===pf.id&&S.playBuf){} else if(cp&&cp.driveId===pf.id){await loadPlay(new File([cp.blob],cp.name),true)}
+    else{gdMsg('Baixando o playback (só desta vez)…');gdProg(0.1);await loadPlay(new File([await gdBlob(pf.id)],pf.name),false,pf.id)}
+    if(cg&&cg.driveId===gf.id&&S.guide&&S.guideBuf){} else if(cg&&cg.driveId===gf.id){await loadGuide(new File([cg.blob],cg.name),true)}
+    else{gdMsg('Baixando a voz-guia (só desta vez)…');gdProg(0.5);await loadGuide(new File([await gdBlob(gf.id)],gf.name),false,gf.id)}
+    const lf=files.find(f=>f.name==='letra.txt');if(lf&&!S.lyrics.trim()){const t=await (await gdBlob(lf.id)).text();S.lyrics=t;store.set('lyrics',t);$('#ta').value=t}
+    const sf=files.find(f=>f.name==='sincronizacao.json');if(sf&&!S.sync){try{S.sync=JSON.parse(await (await gdBlob(sf.id)).text());store.set('sync',S.sync)}catch(e){}}
+    GD.cur={id,name};store.set('gd_last',{id,name});gdProg(1);renderLines();updateCur();gdMsg('Pronto: “'+name+'” ('+tom+') está neste celular.')}
+  catch(e){gdMsg('Erro ao carregar: '+e.message,true)}}
+$('#gd-load').onclick=()=>{const id=$('#gd-song').value;const song=GD.songs.find(f=>f.id===id);if(song)gdLoad(id,song.name)};
 async function gdPutText(folder,name,text,type){const ex=(await gdFind(`'${folder}' in parents and name='${name}'`))[0];return gdUpload(name,new Blob([text],{type}),folder,ex&&ex.id)}
 $('#gd-savelyr').onclick=async()=>{const st=$('#st-lyr');if(!GD.cur){st.textContent='Carregue uma música do Drive primeiro (aba Arquivos).';return}
   st.textContent='Salvando no Drive…';
@@ -665,12 +734,38 @@ $('#b-up').onclick=async()=>{if(!S.lastTake||!GD.cur)return;const btn=$('#b-up')
     await gdUpload(S.lastTake.name,S.lastTake.blob,folder,null,p=>btn.textContent='Enviando… '+Math.round(p*100)+'%');
     btn.textContent='✅ Salva no seu Drive'}catch(e){btn.disabled=false;btn.textContent='☁️ Tentar enviar de novo';$('#r-note').textContent='Não enviou: '+e.message}};
 
+/* ================= tela de entrada (login) ================= */
+const OWNER_HASH='5c019a33c342eebafb563e9f11bab41019703a03fa60c4b272e113cec37fa786';
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function ownerOk(){const ok=store.get('gate_ok',null);if(ok&&ok.tok===GD.tok)return true;
+  const r=await gd('about?fields=user(emailAddress)');const j=await r.json();const h=await sha256(((j.user&&j.user.emailAddress)||'').trim().toLowerCase());
+  const yes=h===OWNER_HASH;if(yes)store.set('gate_ok',{tok:GD.tok});return yes}
+function unlock(){document.body.classList.remove('locked');tunerOn=false;$('#gd-login').textContent='✅ Conectado ao Google';$('#gd-savelyr').classList.remove('hide');resize();gdRefresh().catch(()=>{})}
+async function gateTry(interactive){const st=$('#gate-st');
+  try{if(interactive)st.textContent='Abrindo o login do Google…';await gdToken(interactive);
+    if(await ownerOk()){unlock();return true}
+    GD.tok=null;try{sessionStorage.removeItem('gd_tok');localStorage.removeItem('gd_tok')}catch(e){}
+    st.textContent='Esta conta não tem acesso.';st.classList.add('err');return false}
+  catch(e){if(interactive){st.textContent='Não entrou: '+e.message;st.classList.add('err')}return false}}
+$('#gate-btn').onclick=()=>gateTry(true);
+let tunerOn=false;
+$('#t-btn').onclick=async()=>{const c=ac();if(c.state!=='running')await c.resume();if(!(await ensureMic()))return;
+  tunerOn=!tunerOn;$('#t-btn').textContent=tunerOn?'⏹ Desligar microfone':'🎤 Ligar microfone';if(tunerOn)tunerLoop()};
+let tSm=null;
+function tunerLoop(){if(!tunerOn||!document.body.classList.contains('locked'))return;
+  const m=livePitch();
+  if(m!=null){tSm=tSm==null||Math.abs(m-tSm)>0.7?m:tSm*0.7+m*0.3;const n=Math.round(tSm),c=Math.round((tSm-n)*100);
+    $('#t-note').textContent=nname(n);$('#t-dot').style.left=(50+c)+'%';$('#t-dot').style.background=Math.abs(c)<15?'var(--ok)':'var(--accent)';
+    $('#t-cents').textContent=(Math.abs(c)<15?'Afinado! ':c>0?'Um pouco alto ':'Um pouco baixo ')+'('+(c>0?'+':'')+c+' cents) · '+Math.round(440*Math.pow(2,(tSm-69)/12))+' Hz'}
+  requestAnimationFrame(tunerLoop)}
+
 /* ================= iniciar ================= */
+gateTry(false);
 resize();
 (async()=>{const p=await idb.get('play'),q=await idb.get('guide');
   if(p&&p.blob){await loadPlay(new File([p.blob],p.name),true)}
   if(q&&q.blob){await loadGuide(new File([q.blob],q.name),true)}
-  const lt=await idb.get('lastTake');if(lt)S.lastTake=lt;
+  const lt=await idb.get('lastTake');if(lt)S.lastTake=lt;updateCur();
   if(!(p&&q))document.querySelector('nav button[data-tab=config]').click()})();
 if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
