@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0b14">
+<title>Karaokê Studio</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<style>
+:root{
+  --bg:#0d0b14;--panel:#17141f;--panel2:#211c2c;--line:#2e2740;
+  --text:#f3eefc;--muted:#a59cb8;--accent:#ff4f9a;--accent2:#7c5cff;
+  --ok:#3ddc97;--warn:#ffb547;--bad:#ff6b6b;--target:#5b4a86;--target-on:#b9a4ff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.2px}
+header h1 span{color:var(--accent)}
+header .sp{flex:1}
+nav{display:flex;gap:6px}
+nav button{background:none;border:1px solid var(--line);color:var(--muted);padding:7px 11px;border-radius:999px;font-size:13px}
+nav button.on{background:var(--panel2);color:var(--text);border-color:var(--accent2)}
+main{max-width:900px;margin:0 auto;padding:12px 16px 120px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 200px}
+label.file{display:flex;flex-direction:column;gap:6px;background:var(--panel2);border:1px dashed var(--line);border-radius:12px;padding:12px;cursor:pointer}
+label.file b{font-size:14px}
+label.file small{color:var(--muted);font-size:12px;word-break:break-all}
+label.file input{display:none}
+label.file.ok{border-style:solid;border-color:var(--ok)}
+select,input[type=range]{width:100%}
+input[type=range]{accent-color:var(--accent)}
+input.txt{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px;width:100%}
+select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.status{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
+.status.err{color:var(--bad)}
+.bar{height:6px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+#stage{position:relative;background:#0a0811;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#lane{display:block;width:100%;height:38vh;min-height:220px}
+#hud{position:absolute;top:8px;left:10px;right:10px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);pointer-events:none}
+#hud b{color:var(--text);font-variant-numeric:tabular-nums}
+#recdot{display:none;color:var(--bad);font-weight:700}
+#pts{position:absolute;top:26px;right:12px;font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 0 12px rgba(124,92,255,.8);pointer-events:none}
+#toast{position:absolute;left:0;right:0;top:38%;text-align:center;font-size:34px;font-weight:900;letter-spacing:1px;pointer-events:none;opacity:0;transform:scale(.8);transition:opacity .25s,transform .25s}
+#toast.show{opacity:1;transform:scale(1)}
+#recdot.on{display:inline}
+#lyrics{padding:14px 12px 16px;text-align:center;min-height:118px}
+#lnow{font-size:clamp(20px,5.6vw,30px);font-weight:800;line-height:1.25;background:linear-gradient(90deg,var(--accent) var(--p,0%),var(--text) var(--p,0%));-webkit-background-clip:text;background-clip:text;color:transparent}
+#lnext{font-size:clamp(15px,4vw,19px);color:var(--muted);margin-top:8px}
+#lhint{font-size:12px;color:var(--muted);margin-top:6px}
+.controls{position:fixed;left:0;right:0;bottom:0;background:rgba(13,11,20,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;z-index:5}
+.btn{border:0;border-radius:14px;padding:14px 18px;font-size:16px;font-weight:700;color:#fff;background:var(--panel2);min-width:64px}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));flex:1;max-width:340px}
+.btn.rec{background:var(--panel2);border:2px solid var(--bad)}
+.btn.rec.on{background:var(--bad)}
+.btn:disabled{opacity:.4}
+#lines{max-height:40vh;overflow:auto;margin:0;padding:0;list-style:none}
+#lines li{display:flex;gap:10px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);font-size:14px}
+#lines li .t{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px;min-width:42px}
+#lines li .x{flex:1}
+#lines li .acc{font-size:12px;font-weight:700}
+#lines li button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px}
+textarea{width:100%;min-height:42vh;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px;line-height:1.5}
+.small{font-size:12px;color:var(--muted)}
+.hide{display:none!important}
+#result{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:9;padding:16px}
+#result .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;max-width:420px;width:100%;text-align:center}
+#score{font-size:64px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:16px 0}
+.stats div{background:var(--panel2);border-radius:10px;padding:10px 4px}
+.stats b{display:block;font-size:20px}
+.stats span{font-size:11px;color:var(--muted)}
+#worst{text-align:left;font-size:13px;color:var(--muted);margin:0 0 14px;padding-left:18px}
+.chip{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted);margin:2px}
+#tapbtn{width:100%;padding:26px;font-size:20px;margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Karaokê <span>Studio</span></h1>
+  <div class="sp"></div>
+  <nav>
+    <button data-tab="cantar" class="on">Cantar</button>
+    <button data-tab="letra">Letra</button>
+    <button data-tab="config">Arquivos</button>
+  </nav>
+</header>
+<main>
+  <!-- ARQUIVOS -->
+  <section id="tab-config" class="hide">
+    <div class="card">
+      <h2>Suas músicas no Google Drive</h2>
+      <p class="small">Os áudios, a letra e as suas gravações ficam numa pasta <b>privada</b> do seu Google Drive (“Karaokê Studio”). Este site é público, mas só enxerga essa pasta depois que você entra com a sua conta Google.</p>
+      <div class="row">
+        <button class="btn" id="gd-login">🔐 Entrar com Google</button>
+        <span class="small" id="gd-who"></span>
+      </div>
+      <div class="row hide" id="gd-songrow" style="margin-top:10px">
+        <select id="gd-song"></select>
+        <button class="btn primary" id="gd-load" style="max-width:none">⬇️ Carregar música</button>
+      </div>
+      <details class="hide" id="gd-add" style="margin-top:12px">
+        <summary class="small" style="cursor:pointer">➕ Adicionar uma música ao Drive</summary>
+        <div class="row" style="margin-top:10px">
+          <div class="field">Nome da música <input class="txt" id="gd-newname" placeholder="Ex.: nome da música"></div>
+          <label class="file" id="lf-gdfiles"><b>📁 Arquivos</b><small>playbacks e vozes-guia (pode escolher vários)</small><input type="file" accept="audio/*" multiple id="gd-files"></label>
+        </div>
+        <button class="btn" id="gd-upload" style="margin-top:10px">☁️ Enviar para o Drive</button>
+      </details>
+      <div class="status" id="st-gd"></div>
+      <div class="bar"><i id="gdpb"></i></div>
+    </div>
+    <div class="card">
+      <h2>Ou escolha os arquivos do celular</h2>
+      <div class="row">
+        <label class="file" id="lf-play"><b>🎵 Playback</b><small>instrumental + back vocal (o tom vem no nome do arquivo)</small><input type="file" accept="audio/*" id="f-play"></label>
+        <label class="file" id="lf-guide"><b>🎤 Voz-guia</b><small>voz principal isolada, no mesmo tom do playback</small><input type="file" accept="audio/*" id="f-guide"></label>
+      </div>
+      <div class="status" id="st-files">Escolha os dois arquivos. Eles ficam guardados neste celular para as próximas vezes.</div>
+      <div class="bar"><i id="pb"></i></div>
+    </div>
+    <div class="card">
+      <h2>2. Ajustes</h2>
+      <div class="row">
+        <div class="field">Tom do playback
+          <select id="sel-key">
+            <option value="0">Original</option>
+            <option value="-1">Meio tom abaixo (−1)</option>
+            <option value="-2" selected>1 tom abaixo (−2)</option>
+            <option value="1">Meio tom acima (+1)</option>
+            <option value="2">1 tom acima (+2)</option>
+          </select>
+        </div>
+        <div class="field">Guia para a voz
+          <select id="sel-oct">
+            <option value="-12" selected>Masculina (oitava abaixo)</option>
+            <option value="0">Mesma oitava da guia</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="field">Volume do playback <input type="range" id="vol" min="0" max="1.5" step="0.05" value="1"></div>
+        <div class="field">Volume da voz original no fone <input type="range" id="gvol" min="0" max="1.2" step="0.05" value="0.6"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="field">Microfone para gravar
+          <select id="sel-mic"><option value="">Microfone do celular (recomendado)</option></select>
+        </div>
+        <div class="field">Atraso fone/microfone: <b id="latv">auto</b><input type="range" id="lat" min="0" max="800" step="10" value="0"></div>
+      </div>
+      <p class="small">Com fone Bluetooth, use o microfone do celular: o microfone do fone grava com qualidade de ligação. O Bluetooth atrasa o som em 150–300 ms, por isso <b>calibre o atraso</b> uma vez por fone.</p>
+    </div>
+    <div class="card">
+      <h2>3. Calibrar atraso (fone Bluetooth)</h2>
+      <p class="small">Com o fone conectado, toque em Calibrar. Você vai ouvir 8 batidas: diga <b>“tá”</b> junto com cada uma, no ritmo. O app mede o atraso sozinho.</p>
+      <button class="btn" id="b-cal">🎧 Calibrar</button>
+      <div class="status" id="st-cal"></div>
+    </div>
+  </section>
+
+  <!-- LETRA -->
+  <section id="tab-letra" class="hide">
+    <div class="card">
+      <h2>Letra</h2>
+      <p class="small">Cole a letra aqui, <b>uma linha por frase cantada</b>. Linhas vazias são ignoradas. Ela fica salva neste celular e, se você entrar com o Google, também no seu Drive.</p>
+      <textarea id="ta" placeholder="Cole a letra aqui…"></textarea>
+      <div class="status" id="st-lyr"></div>
+      <button class="btn hide" id="gd-savelyr" style="margin-top:8px">☁️ Salvar letra e sincronização no Drive</button>
+    </div>
+    <div class="card">
+      <h2>Sincronizar a letra</h2>
+      <p class="small">O app já encaixa as linhas nas frases da voz-guia. Se ficar fora do tempo, toque em <b>Sincronizar</b>: a música toca e você toca no botão grande <b>no começo de cada linha</b>.</p>
+      <div class="row">
+        <button class="btn" id="b-sync">🎯 Sincronizar</button>
+        <button class="btn" id="b-unsync">↺ Voltar ao automático</button>
+      </div>
+      <button class="btn primary hide" id="tapbtn">Próxima linha</button>
+      <div class="status" id="st-sync"></div>
+    </div>
+  </section>
+
+  <!-- CANTAR -->
+  <section id="tab-cantar">
+    <div id="stage">
+      <canvas id="lane"></canvas>
+      <div id="hud"><span><span id="recdot">● REC </span><b id="clock">0:00</b> / <span id="dur">0:00</span></span><span>Tom <b id="hudkey">−2</b> · Afinação <b id="live">—</b></span></div>
+      <div id="pts">0</div><div id="toast"></div>
+      <div id="lyrics"><div id="lnow">Abra “Arquivos” e escolha o playback e a voz-guia</div><div id="lnext"></div><div id="lhint"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h2>Começar de uma linha</h2>
+      <ul id="lines"></ul>
+      <p class="small">O app começa 3 segundos antes da linha escolhida. A gravação guarda o ponto de início no nome do arquivo.</p>
+    </div>
+  </section>
+</main>
+
+<div class="controls">
+  <button class="btn rec on" id="b-rec" title="Gravar">⏺</button>
+  <button class="btn primary" id="b-play" disabled>▶ Cantar do início</button>
+  <button class="btn" id="b-stop" disabled>■</button>
+</div>
+
+<div id="result" class="hide"><div class="box">
+  <div class="small">Sua nota</div>
+  <div id="score">0</div>
+  <div class="stats">
+    <div><b id="r-hit">0%</b><span>notas afinadas</span></div>
+    <div><b id="r-cents">0</b><span>desvio médio (cents)</span></div>
+    <div><b id="r-cov">0%</b><span>cobertura</span></div>
+  </div>
+  <div class="small" style="text-align:left;margin-bottom:6px">Linhas para treinar:</div>
+  <ol id="worst"></ol>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <button class="btn primary hide" id="b-up" style="max-width:none">☁️ Enviar gravação para o Drive</button>
+    <button class="btn primary" id="b-save" style="max-width:none">💾 Baixar gravação (WAV)</button>
+    <button class="btn" id="b-close">Fechar</button>
+  </div>
+  <p class="small" id="r-note"></p>
+</div></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+'use strict';
+/* ================= utilidades ================= */
+const $=s=>document.querySelector(s);
+const fmt=t=>{t=Math.max(0,t);return Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')};
+const NOTE=['Dó','Dó#','Ré','Ré#','Mi','Fá','Fá#','Sol','Sol#','Lá','Lá#','Si'];
+const nname=m=>NOTE[((Math.round(m)%12)+12)%12]+(Math.floor(Math.round(m)/12)-1);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* IndexedDB para guardar arquivos e a análise da guia */
+const idb={db:null,async open(){if(this.db)return this.db;this.db=await new Promise((res,rej)=>{const r=indexedDB.open('karaoke-studio',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return this.db},
+  async get(k){try{const db=await this.open();return await new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>res(undefined)})}catch(e){return undefined}},
+  async set(k,v){try{const db=await this.open();await new Promise(res=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=res;tx.onerror=res})}catch(e){}}};
+
+/* ================= estado ================= */
+const S={ctx:null,playBuf:null,guideBuf:null,guide:null,playName:'',gkey:0,key:+store.get('key',-2),oct:+store.get('oct',-12),
+  lyrics:store.get('lyrics',''),sync:store.get('sync',null),
+  playing:false,src:null,gsrc:null,t0ctx:0,offset:0,recOn:true,rec:null,recChunks:[],recStartSong:0,mic:null,an:null,
+  trail:[],noteStats:null,lastTake:null,syncMode:false,syncIdx:0,syncTimes:[]};
+$('#sel-key').value=String(S.key);$('#sel-oct').value=String(S.oct);
+
+/* ================= abas ================= */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  ['cantar','letra','config'].forEach(t=>$('#tab-'+t).classList.toggle('hide',t!==b.dataset.tab));
+  if(b.dataset.tab==='cantar')resize();
+});
+
+/* ================= áudio ================= */
+function ac(){if(!S.ctx){S.ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});}return S.ctx}
+async function decode(blob){const ab=await blob.arrayBuffer();return await ac().decodeAudioData(ab)}
+function keyFromName(n){n=n.toLowerCase();
+  if(/1\s*tom\s*abaixo|-2\b|−2/.test(n))return -2; if(/meio\s*tom\s*abaixo|-1\b|−1/.test(n))return -1;
+  if(/1\s*tom\s*acima|\+2/.test(n))return 2; if(/meio\s*tom\s*acima|\+1/.test(n))return 1;
+  if(/original/.test(n))return 0; return null}
+const setProg=p=>$('#pb').style.width=(p*100).toFixed(0)+'%';
+function msg(t,err){const e=$('#st-files');e.textContent=t;e.classList.toggle('err',!!err)}
+
+async function loadPlay(file,fromCache){
+  try{msg('Lendo o playback…');S.playBuf=await decode(file);S.playName=file.name||'playback';
+    $('#lf-play').classList.add('ok');$('#lf-play small').textContent=S.playName+' · '+fmt(S.playBuf.duration);
+    const k=keyFromName(S.playName);if(k!=null){S.key=k;$('#sel-key').value=String(k);store.set('key',k)}
+    if(!fromCache)idb.set('play',{name:S.playName,blob:file});ready();
+  }catch(e){msg('Não consegui ler o playback: '+e.message,true)}}
+async function loadGuide(file,fromCache){
+  try{msg('Lendo a voz-guia…');S.guideBuf=await decode(file);
+    $('#lf-guide').classList.add('ok');$('#lf-guide small').textContent=(file.name||'guia')+' · '+fmt(S.guideBuf.duration);
+    if(!fromCache)idb.set('guide',{name:file.name,blob:file});
+    const gk=keyFromName(file.name||'');S.gkey=gk==null?0:gk;
+    const sig=(file.name||'')+':'+S.guideBuf.length;
+    let g=await idb.get('analysis');
+    if(!g||g.sig!==sig){g=await analyzeGuide(S.guideBuf);g.sig=sig;idb.set('analysis',g)}
+    S.guide=g;buildTargets();ready();
+  }catch(e){msg('Não consegui analisar a voz-guia: '+e.message,true)}}
+$('#f-play').onchange=e=>e.target.files[0]&&loadPlay(e.target.files[0]);
+$('#f-guide').onchange=e=>e.target.files[0]&&loadGuide(e.target.files[0]);
+$('#sel-key').onchange=e=>{S.key=+e.target.value;store.set('key',S.key);buildTargets();$('#hudkey').textContent=keyLabel()};
+$('#sel-oct').onchange=e=>{S.oct=+e.target.value;store.set('oct',S.oct);buildTargets()};
+$('#vol').oninput=e=>{if(S.gain)S.gain.gain.value=+e.target.value};
+const gv=$('#gvol');gv.value=store.get('gvol',0.6);
+gv.oninput=e=>{store.set('gvol',+e.target.value);if(S.ggain)S.ggain.gain.value=S.key===S.gkey?+e.target.value:0};
+const latEl=$('#lat');latEl.value=store.get('lat',0);
+const latLabel=()=>$('#latv').textContent=(+latEl.value===0?'auto (sem calibrar)':latEl.value+' ms');latLabel();
+latEl.oninput=()=>{store.set('lat',+latEl.value);latLabel()};
+const keyLabel=()=>({0:'original','-1':'½ tom ↓','-2':'1 tom ↓','1':'½ tom ↑','2':'1 tom ↑'})[S.key];
+$('#hudkey').textContent=keyLabel();
+
+function ready(){
+  const ok=S.playBuf&&S.guide;
+  $('#b-play').disabled=!ok;
+  if(S.playBuf)$('#dur').textContent=fmt(S.playBuf.duration);
+  if(ok){msg('Pronto! '+S.guide.notes.length+' notas e '+S.guide.phrases.length+' frases encontradas na guia.'+(S.key!==S.gkey?' Atenção: a voz-guia está em outro tom, por isso ela fica muda no fone (a linha de afinação continua certa).':''));setProg(1);renderLines();idle();
+    if(!S.playing){$('#lnow').textContent='Tudo pronto! Toque em ▶ para cantar';$('#lnext').textContent='ou escolha uma linha abaixo para começar dela';
+      const cur=document.querySelector('nav button.on');if(cur&&cur.dataset.tab==='config'&&!S.autoSwitched){S.autoSwitched=true;setTimeout(()=>document.querySelector('nav button[data-tab=cantar]').click(),900)}}}
+}
+
+/* ---------- análise da voz-guia (Web Worker, YIN) ---------- */
+const workerSrc=`
+onmessage=e=>{const x=e.data.x,sr=e.data.sr;const hop=Math.round(sr*0.01),W=Math.round(sr*0.05);
+ const tmin=Math.floor(sr/1150),tmax=Math.ceil(sr/130);const n=Math.floor((x.length-W-tmax)/hop);
+ const f0=new Float32Array(Math.max(0,n));const rms=new Float32Array(Math.max(0,n));const d=new Float32Array(tmax+1);
+ for(let i=0;i<n;i++){const o=i*hop;let s=0;for(let j=0;j<W;j++){const v=x[o+j];s+=v*v}rms[i]=Math.sqrt(s/W);
+  for(let t=1;t<=tmax;t++){let a=0;for(let j=0;j<W;j++){const q=x[o+j]-x[o+j+t];a+=q*q}d[t]=a}
+  let run=0,best=-1;for(let t=1;t<=tmax;t++){run+=d[t];const c=d[t]*t/(run||1);if(t>=tmin&&c<0.15){let tt=t;while(tt+1<=tmax&&d[tt+1]*(tt+1)/((run+d[tt+1])||1)<c&&d[tt+1]<d[tt])tt++;best=tt;break}}
+  if(best>0){const a=d[best-1]||d[best],b=d[best],c2=d[best+1]||d[best];const den=a-2*b+c2;const sh=den?0.5*(a-c2)/den:0;f0[i]=sr/(best+sh)}
+  if(i%400===0)postMessage({p:i/n})}
+ postMessage({f0,rms,hop:0.01})}`;
+async function analyzeGuide(buf){
+  msg('Analisando a melodia da voz-guia (só na primeira vez, ~1 min)…');
+  const sr=8000,len=Math.ceil(buf.duration*sr);
+  const off=new OfflineAudioContext(1,len,sr);const s=off.createBufferSource();s.buffer=buf;s.connect(off.destination);s.start();
+  const r=await off.startRendering();const x=r.getChannelData(0).slice();
+  const w=new Worker(URL.createObjectURL(new Blob([workerSrc],{type:'text/javascript'})));
+  const out=await new Promise((res,rej)=>{w.onmessage=e=>{if(e.data.p!=null)setProg(e.data.p);else res(e.data)};w.onerror=rej;w.postMessage({x,sr},[x.buffer])});
+  w.terminate();return buildNotes(out.f0,out.rms,out.hop)}
+function buildNotes(f0,rms,hop){
+  const n=f0.length;let mx=0;for(let i=0;i<n;i++)if(rms[i]>mx)mx=rms[i];
+  const m=new Float32Array(n).fill(NaN);
+  for(let i=0;i<n;i++)if(f0[i]>0&&rms[i]>mx*0.03)m[i]=69+12*Math.log2(f0[i]/440);
+  // mediana 5 para tirar saltos
+  const mm=new Float32Array(n).fill(NaN);
+  for(let i=0;i<n;i++){const w=[];for(let k=-2;k<=2;k++){const v=m[i+k];if(v===v)w.push(v)}if(w.length>=3&&m[i]===m[i]){w.sort((a,b)=>a-b);mm[i]=w[w.length>>1]}}
+  // notas: trechos estáveis
+  const notes=[];let i=0;
+  while(i<n){if(mm[i]!==mm[i]){i++;continue}let j=i,seg=[mm[i]];
+    while(j+1<n&&mm[j+1]===mm[j+1]){const w=seg.slice(-6).sort((a,b)=>a-b);if(Math.abs(mm[j+1]-w[w.length>>1])>0.6)break;j++;seg.push(mm[j])}
+    if(j-i+1>=8){const s=seg.slice().sort((a,b)=>a-b);notes.push({t0:i*hop,t1:(j+1)*hop,m:Math.round(s[s.length>>1])})}
+    i=j+1}
+  // junta notas iguais muito próximas
+  const nn=[];for(const x of notes){const p=nn[nn.length-1];if(p&&p.m===x.m&&x.t0-p.t1<0.07)p.t1=x.t1;else nn.push(x)}
+  // frases
+  let ph=[],on=-1,last=-1;
+  for(let k=0;k<n;k++){const v=mm[k]===mm[k];if(v){if(on<0)on=k;last=k}else if(on>=0&&(k-last)*hop>0.45){ph.push([on*hop,(last+1)*hop]);on=-1}}
+  if(on>=0)ph.push([on*hop,(last+1)*hop]);
+  ph=ph.filter(p=>p[1]-p[0]>0.5);
+  const mer=[];for(const p of ph){const q=mer[mer.length-1];if(q&&(q[1]-q[0]<1.2||p[1]-p[0]<1.0)&&p[0]-q[1]<0.8)q[1]=p[1];else mer.push(p.slice())}
+  return {notes:nn,phrases:mer}}
+
+let TG=[],MINM=40,MAXM=70;
+function buildTargets(){if(!S.guide)return;const sh=S.key-S.gkey+S.oct;
+  TG=S.guide.notes.map(x=>({t0:x.t0,t1:x.t1,m:x.m+sh,hit:0,tot:0,dev:0,devn:0}));
+  S.totDur=TG.reduce((a,x)=>a+(x.t1-x.t0>=0.12?x.t1-x.t0:0),0)||1;
+  const ms=TG.map(x=>x.m).sort((a,b)=>a-b);
+  if(ms.length){MINM=ms[Math.floor(ms.length*0.02)]-3;MAXM=ms[Math.floor(ms.length*0.98)]+3}
+  renderLines()}
+
+/* ---------- letra ---------- */
+const lyrLines=()=>S.lyrics.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+function slots(){
+  const L=lyrLines(),P=S.guide?S.guide.phrases:[];
+  if(S.sync&&S.sync.length){return S.sync.map((t,i)=>({t0:t,t1:i+1<S.sync.length?Math.min(S.sync[i+1],t+12):t+8,text:L[i]||''}))}
+  const out=[];for(let i=0;i<P.length;i++)out.push({t0:P[i][0],t1:P[i][1],text:L[i]||''});
+  return out}
+$('#ta').value=S.lyrics;
+const lyrStatus=()=>{const L=lyrLines().length,P=S.guide?S.guide.phrases.length:0;
+  $('#st-lyr').textContent=L?`${L} linhas coladas · ${S.sync?'sincronizadas por você':P+' frases detectadas na guia (encaixe automático)'}`:'Sem letra: o app mostra as frases como “♪ frase 1, 2…”.'};
+$('#ta').oninput=e=>{S.lyrics=e.target.value;store.set('lyrics',S.lyrics);lyrStatus();renderLines()};
+lyrStatus();
+function renderLines(){
+  lyrStatus();const ul=$('#lines');ul.innerHTML='';
+  slots().forEach((s,i)=>{const li=document.createElement('li');
+    li.innerHTML=`<span class="t">${fmt(s.t0)}</span><span class="x"></span><span class="acc"></span><button>▶</button>`;
+    li.querySelector('.x').textContent=s.text||('♪ frase '+(i+1));
+    li.querySelector('button').onclick=()=>start(Math.max(0,s.t0-3));
+    li.dataset.i=i;ul.appendChild(li)})}
+
+/* ---------- sincronizar por toque ---------- */
+$('#b-sync').onclick=async()=>{if(!S.playBuf){alert('Escolha o playback primeiro (aba Arquivos).');return}
+  if(!lyrLines().length){alert('Cole a letra primeiro.');return}
+  S.syncMode=true;S.syncTimes=[];$('#tapbtn').classList.remove('hide');$('#tapbtn').textContent='Toque no começo da linha 1';
+  $('#st-sync').textContent='Ouça e toque no começo de cada linha. Para terminar, toque em ■.';
+  await start(0,{noRec:true})};
+$('#tapbtn').onclick=()=>{if(!S.playing)return;const L=lyrLines();S.syncTimes.push(songTime());
+  const k=S.syncTimes.length;$('#tapbtn').textContent=k<L.length?`Linha ${k+1}: “${L[k].slice(0,40)}”`:'Pronto! Toque em ■';
+  if(k>=L.length)stop()};
+$('#b-unsync').onclick=()=>{S.sync=null;store.set('sync',null);renderLines();$('#st-sync').textContent='Voltou ao encaixe automático.'};
+
+/* ---------- microfone + gravação ---------- */
+const workletSrc=`class Rec extends AudioWorkletProcessor{constructor(){super();this.start=1e12;this.stop=1e12;this.port.onmessage=e=>{if(e.data.start!=null)this.start=e.data.start;if(e.data.stop!=null)this.stop=e.data.stop}}
+process(inp){const ch=inp[0]&&inp[0][0];if(!ch)return true;const t=currentTime;if(t+ch.length/sampleRate>=this.start&&t<this.stop){let a=0;if(t<this.start)a=Math.round((this.start-t)*sampleRate);this.port.postMessage(ch.slice(a))}return true}}
+registerProcessor('rec',Rec);`;
+async function listMics(){try{const ds=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='audioinput');
+  const sel=$('#sel-mic'),cur=store.get('mic','');sel.innerHTML='';
+  const o0=document.createElement('option');o0.value='';o0.textContent='Microfone do celular (recomendado)';sel.appendChild(o0);
+  ds.forEach(d=>{if(!d.deviceId||d.deviceId==='default'||d.deviceId==='communications')return;const o=document.createElement('option');o.value=d.deviceId;o.textContent=d.label||('Microfone '+(sel.length));sel.appendChild(o)});
+  sel.value=[...sel.options].some(o=>o.value===cur)?cur:''}catch(e){}}
+function builtinMicId(ds){const bad=/bluetooth|headset|fone|bt|airpods|buds|hands-free|sco/i;const ok=ds.find(d=>d.kind==='audioinput'&&d.label&&!bad.test(d.label)&&d.deviceId!=='default'&&d.deviceId!=='communications');return ok?ok.deviceId:null}
+$('#sel-mic').onchange=e=>{store.set('mic',e.target.value);if(S.micStream){S.micStream.getTracks().forEach(t=>t.stop());S.mic.disconnect();S.mic=null}};
+async function ensureMic(){
+  if(S.mic)return true;
+  try{const base={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1};
+    let id=store.get('mic','');
+    let st=await navigator.mediaDevices.getUserMedia({audio:id?{...base,deviceId:{exact:id}}:base});
+    if(!id){const ds=await navigator.mediaDevices.enumerateDevices();const b=builtinMicId(ds);const cur=st.getAudioTracks()[0].getSettings().deviceId;
+      if(b&&cur!==b){st.getTracks().forEach(t=>t.stop());st=await navigator.mediaDevices.getUserMedia({audio:{...base,deviceId:{exact:b}}})}}
+    S.micStream=st;listMics();
+    const c=ac();S.mic=c.createMediaStreamSource(st);
+    S.an=c.createAnalyser();S.an.fftSize=2048;S.mic.connect(S.an);
+    if(!S.wl){await c.audioWorklet.addModule(URL.createObjectURL(new Blob([workletSrc],{type:'text/javascript'})));S.wl=true}
+    if(!S.rec){S.rec=new AudioWorkletNode(c,'rec');const z=c.createGain();z.gain.value=0;S.rec.connect(z).connect(c.destination);
+      S.rec.port.onmessage=e=>{if(S.recording||S.calib)(S.calib?S.calChunks:S.recChunks).push(e.data)}}
+    S.mic.connect(S.rec);    return true}catch(e){alert('Sem acesso ao microfone: '+e.message+'\nVocê ainda pode cantar, mas sem avaliação nem gravação.');return false}}
+
+/* detector de altura ao vivo (YIN, 16 kHz) */
+const LIVE={buf:null};
+function livePitch(){
+  if(!S.an)return null;const sr=S.ctx.sampleRate;const N=S.an.fftSize;
+  if(!LIVE.buf)LIVE.buf=new Float32Array(N);S.an.getFloatTimeDomainData(LIVE.buf);
+  const r=Math.max(1,Math.round(sr/16000)),fs=sr/r,M=Math.floor(N/r),x=new Float32Array(M);
+  let e=0;for(let i=0;i<M;i++){let s=0;for(let k=0;k<r;k++)s+=LIVE.buf[i*r+k];x[i]=s/r;e+=x[i]*x[i]}
+  const rms=Math.sqrt(e/M);if(rms<0.006)return null;
+  const tmax=Math.min(Math.ceil(fs/65),M>>1),tmin=Math.floor(fs/700),W=M-tmax;const d=new Float32Array(tmax+2);
+  for(let t=1;t<=tmax;t++){let a=0;for(let j=0;j<W;j++){const q=x[j]-x[j+t];a+=q*q}d[t]=a}
+  let run=0;for(let t=1;t<=tmax;t++){run+=d[t];const c=d[t]*t/(run||1);
+    if(t>=tmin&&c<0.12){let tt=t;while(tt+1<=tmax&&d[tt+1]<d[tt])tt++;const a=d[tt-1],b=d[tt],c2=d[tt+1]||b;const den=a-2*b+c2;const sh=den?0.5*(a-c2)/den:0;
+      return 69+12*Math.log2((fs/(tt+sh))/440)}}
+  return null}
+
+/* ---------- calibração de atraso ---------- */
+$('#b-cal').onclick=async()=>{
+  const c=ac();if(c.state!=='running')await c.resume();if(!(await ensureMic()))return;
+  const st=$('#st-cal');st.textContent='Prepare-se… diga “tá” junto com cada batida.';
+  const N=8,gap=0.6,t0=c.currentTime+1.2;const clicks=[];
+  for(let k=0;k<N;k++){const t=t0+k*gap;clicks.push(t);const o=c.createOscillator(),gn=c.createGain();o.frequency.value=k%4?880:1320;
+    gn.gain.setValueAtTime(0.0001,t);gn.gain.exponentialRampToValueAtTime(0.7,t+0.004);gn.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
+    o.connect(gn).connect(c.destination);o.start(t);o.stop(t+0.08)}
+  S.calChunks=[];S.calib=true;S.rec.port.postMessage({start:t0-0.2,stop:t0+N*gap+0.9});
+  await new Promise(r=>setTimeout(r,(t0-c.currentTime+N*gap+1.1)*1000));S.calib=false;
+  const sr=c.sampleRate;let n=0;S.calChunks.forEach(x=>n+=x.length);const x=new Float32Array(n);let o=0;S.calChunks.forEach(y=>{x.set(y,o);o+=y.length});
+  const hop=Math.round(sr*0.005);const env=[];for(let i=0;i+hop<=x.length;i+=hop){let s=0;for(let j=0;j<hop;j++)s+=x[i+j]*x[i+j];env.push(Math.sqrt(s/hop))}
+  const sorted=env.slice().sort((a,b)=>a-b);const floor=sorted[Math.floor(sorted.length*0.2)]||0;const peak=sorted[Math.floor(sorted.length*0.995)]||0;
+  const thr=floor+(peak-floor)*0.25;const offs=[];
+  clicks.forEach(tc=>{const a=Math.round((tc-(t0-0.2)+0.02)/0.005),b=Math.round((tc-(t0-0.2)+0.55)/0.005);
+    for(let i=a;i<b&&i<env.length;i++){if(env[i]>thr&&env[i-1]<=thr){offs.push((i*0.005)-(tc-(t0-0.2)));break}}});
+  if(offs.length<4||peak<0.01){st.textContent='Não consegui medir (ouvi '+offs.length+' “tá”). Tente de novo falando mais alto, perto do celular.';return}
+  offs.sort((a,b)=>a-b);const med=offs[offs.length>>1];const ms=Math.round(med*1000/10)*10;
+  latEl.value=ms;store.set('lat',ms);latLabel();st.textContent=`Atraso medido: ${ms} ms (${offs.length} de ${N} batidas). Salvo para este fone.`};
+
+/* ---------- tocar / parar ---------- */
+const latency=()=>{const v=+latEl.value;if(v>0)return v/1000;const c=S.ctx;return (c.outputLatency||0)+(c.baseLatency||0)};
+function songTime(){if(!S.playing)return S.offset;return S.ctx.currentTime-S.t0ctx+S.offset}
+async function start(from,opt={}){
+  if(!S.playBuf)return;const c=ac();if(c.state!=='running')await c.resume();
+  if(S.playing)stop(true);
+  const doRec=S.recOn&&!opt.noRec;
+  if(doRec||!opt.noRec)await ensureMic();
+  S.gain=c.createGain();S.gain.gain.value=+$('#vol').value;S.gain.connect(c.destination);
+  S.src=c.createBufferSource();S.src.buffer=S.playBuf;S.src.connect(S.gain);
+  if(S.guideBuf){S.ggain=c.createGain();S.ggain.gain.value=S.key===S.gkey?+$('#gvol').value:0;S.ggain.connect(c.destination);
+    S.gsrc=c.createBufferSource();S.gsrc.buffer=S.guideBuf;S.gsrc.connect(S.ggain)}
+  const when=c.currentTime+0.25;S.t0ctx=when;S.offset=from;S.playing=true;
+  S.src.start(when,from);if(S.gsrc)S.gsrc.start(when,from);
+  S.src.onended=()=>{if(S.playing&&S.src&&songTime()>=S.playBuf.duration-0.3)stop()};
+  TG.forEach(n=>{n.hit=0;n.tot=0;n.dev=0;n.devn=0});S.trail=[];S.pts=0;S.lastFrame=0;S.curLine=-1;$('#pts').textContent='0';S.sumDev=0;S.nDev=0;
+  S.recording=false;S.recChunks=[];
+  if(doRec&&S.rec){S.recording=true;S.recStartSong=from;S.rec.port.postMessage({start:when,stop:1e12})}
+  $('#recdot').classList.toggle('on',S.recording);
+  $('#b-stop').disabled=false;$('#b-play').textContent='↻ Recomeçar';
+  requestAnimationFrame(loop)}
+function stop(silent){
+  if(!S.playing)return;const endSong=songTime();S.playing=false;
+  try{S.src.stop()}catch(e){}try{S.gsrc&&S.gsrc.stop()}catch(e){}
+  if(S.rec)S.rec.port.postMessage({stop:S.ctx.currentTime});
+  $('#recdot').classList.remove('on');$('#b-stop').disabled=true;$('#b-play').textContent='▶ Cantar do início';
+  S.offset=0;
+  if(S.syncMode){S.syncMode=false;$('#tapbtn').classList.add('hide');
+    if(S.syncTimes.length){S.sync=S.syncTimes.slice();store.set('sync',S.sync);$('#st-sync').textContent=`Salvo: ${S.syncTimes.length} linhas sincronizadas.`;renderLines()}
+    return}
+  if(silent)return;
+  const wasRec=S.recording;S.recording=false;
+  setTimeout(()=>finish(S.recStartSong,endSong,wasRec),300)}
+$('#b-play').onclick=()=>start(0);
+$('#b-stop').onclick=()=>stop();
+$('#b-rec').onclick=()=>{S.recOn=!S.recOn;$('#b-rec').classList.toggle('on',S.recOn)};
+
+/* ---------- avaliação ---------- */
+function curTarget(t){let lo=0,hi=TG.length-1;while(lo<=hi){const mid=(lo+hi)>>1;if(TG[mid].t1<t)lo=mid+1;else if(TG[mid].t0>t)hi=mid-1;else return TG[mid]}return null}
+function nearestTargetM(t){let best=null,bd=1e9;for(let k=0;k<TG.length;k++){const x=TG[k];if(x.t1<t-3)continue;if(x.t0>t+3)break;const d=Math.min(Math.abs(x.t0-t),Math.abs(x.t1-t));if(d<bd){bd=d;best=x.m}}return best}
+const fold=(m,ref)=>m+12*Math.round((ref-m)/12);
+function finish(from,to,wasRec){
+  const L=slots();let tot=0,hit=0,dur=0,sung=0;
+  const lineAcc=L.map(()=>({h:0,n:0}));
+  TG.forEach(n=>{if(n.t0<from||n.t1>to||n.t1-n.t0<0.12)return;tot++;dur+=n.t1-n.t0;
+    const ok=n.tot>0&&n.hit/n.tot>=0.4;if(ok)hit++;sung+=n.tot>0?(n.t1-n.t0)*Math.min(1,n.tot/((n.t1-n.t0)*50)):0;
+    const li=L.findIndex(s=>n.t0>=s.t0-0.2&&n.t0<s.t1+0.2);if(li>=0){lineAcc[li].n++;if(ok)lineAcc[li].h++}});
+  const pct=tot?hit/tot:0,cov=dur?Math.min(1,sung/dur):0,cents=S.nDev?Math.round(S.sumDev/S.nDev*100):0;
+  const score=Math.round(100*(0.7*pct+0.3*cov));
+  $('#score').textContent=score;$('#r-hit').textContent=Math.round(pct*100)+'%';$('#r-cents').textContent=cents;$('#r-cov').textContent=Math.round(cov*100)+'%';
+  const w=$('#worst');w.innerHTML='';
+  lineAcc.map((a,i)=>({i,r:a.n?a.h/a.n:1,n:a.n})).filter(x=>x.n>=2).sort((a,b)=>a.r-b.r).slice(0,3).forEach(x=>{
+    const li=document.createElement('li');li.textContent=`${fmt(L[x.i].t0)} · ${(L[x.i].text||'frase '+(x.i+1)).slice(0,48)} — ${Math.round(x.r*100)}%`;w.appendChild(li)});
+  document.querySelectorAll('#lines li').forEach(li=>{const a=lineAcc[+li.dataset.i];const e=li.querySelector('.acc');
+    if(a&&a.n){const r=a.h/a.n;e.textContent=Math.round(r*100)+'%';e.style.color=r>.7?'var(--ok)':r>.4?'var(--warn)':'var(--bad)'}});
+  // gravação
+  S.lastTake=null;
+  if(wasRec&&S.recChunks.length){const sr=S.ctx.sampleRate;let n=0;S.recChunks.forEach(c=>n+=c.length);const x=new Float32Array(n);let o=0;S.recChunks.forEach(c=>{x.set(c,o);o+=c.length});
+    const d=new Date();const stamp=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
+    const name=`karaoke_tom${S.key>=0?'+':''}${S.key}_inicio-${fmt(from).replace(':','m')}s_alinhado-${Math.round(latency()*1000)}ms_${stamp}.wav`;
+    const cut=Math.min(x.length,Math.round(latency()*sr));
+    S.lastTake={name,blob:wav(x.subarray(cut),sr)};idb.set('lastTake',S.lastTake);
+    $('#b-save').disabled=false;const up=$('#b-up');up.classList.toggle('hide',!(GD.cur));up.disabled=false;up.textContent='☁️ Enviar gravação para o Drive';$('#r-note').textContent=`Gravação: ${fmt(x.length/sr)} · ${name}`}
+  else{$('#b-save').disabled=true;$('#r-note').textContent=wasRec?'Nada foi gravado.':'Gravação desligada (botão ⏺).'}
+  $('#result').classList.remove('hide')}
+function wav(x,sr){const b=new ArrayBuffer(44+x.length*2),v=new DataView(b);const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+x.length*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,x.length*2,true);
+  for(let i=0;i<x.length;i++){const s=Math.max(-1,Math.min(1,x[i]));v.setInt16(44+i*2,s<0?s*0x8000:s*0x7fff,true)}
+  return new Blob([b],{type:'audio/wav'})}
+$('#b-save').onclick=()=>{if(!S.lastTake)return;const a=document.createElement('a');a.href=URL.createObjectURL(S.lastTake.blob);a.download=S.lastTake.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)};
+$('#b-close').onclick=()=>$('#result').classList.add('hide');
+
+/* ================= desenho ================= */
+const cv=$('#lane'),g=cv.getContext('2d');let DPR=1,CW=0,CH=0;
+function resize(){DPR=window.devicePixelRatio||1;const r=cv.getBoundingClientRect();CW=r.width;CH=r.height;cv.width=CW*DPR;cv.height=CH*DPR;g.setTransform(DPR,0,0,DPR,0,0);if(!S.playing)idle()}
+window.addEventListener('resize',resize);
+const PPS=()=>Math.max(90,CW/4.2);
+function yOf(m){const top=34,bot=CH-10;return bot-(m-MINM)/(MAXM-MINM)*(bot-top)}
+function draw(t,live){
+  g.clearRect(0,0,CW,CH);const nowX=CW*0.26,pps=PPS();
+  // grade de notas
+  g.font='10px system-ui';g.textAlign='left';
+  for(let m=Math.ceil(MINM);m<=MAXM;m++){const y=yOf(m);const pc=((m%12)+12)%12;const black=[1,3,6,8,10].includes(pc);
+    g.fillStyle=black?'rgba(255,255,255,0.025)':'rgba(255,255,255,0.05)';g.fillRect(0,y-((yOf(m)-yOf(m+1))/2),CW,(yOf(m)-yOf(m+1)));
+    if(pc===0||pc===5||pc===9){g.fillStyle='rgba(255,255,255,0.35)';g.fillText(nname(m),4,y+3)}}
+  // notas alvo
+  const h=Math.max(6,(yOf(MINM)-yOf(MINM+1))*0.8);
+  for(const n of TG){if(n.t1<t-2)continue;if(n.t0>t+5)break;
+    const x0=nowX+(n.t0-t)*pps,x1=nowX+(n.t1-t)*pps,y=yOf(n.m);
+    const active=n.t0<=t&&n.t1>=t;let col=active?'#b9a4ff':'#4b3d72';
+    if(n.t1<t&&n.tot>0)col=n.hit/n.tot>=0.4?'#2fbf83':'#a84a5a';
+    g.fillStyle=col;rr(x0,y-h/2,Math.max(3,x1-x0),h,h/2);}
+  // linha do agora
+  g.fillStyle='rgba(255,79,154,0.9)';g.fillRect(nowX-1,26,2,CH-30);
+  // rastro da voz
+  for(const p of S.trail){if(p.t<t-2.2)continue;const x=nowX+(p.t-t)*pps;const y=yOf(p.m);
+    g.fillStyle=p.ok?'rgba(61,220,151,.95)':'rgba(255,181,71,.9)';g.beginPath();g.arc(x,y,3.2,0,6.283);g.fill()}
+  if(live!=null){g.fillStyle='#fff';g.beginPath();g.arc(nowX,yOf(live),6,0,6.283);g.fill()}}
+function rr(x,y,w,h,r){r=Math.min(r,w/2,h/2);g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.fill()}
+function idle(){draw(S.offset,null)}
+let lastLyr=-2;
+function loop(){
+  if(!S.playing)return;
+  const tSong=songTime(),t=tSong-latency();
+  $('#clock').textContent=fmt(Math.max(0,t));
+  let live=null;const m=livePitch();
+  if(m!=null&&t>0){const tg=curTarget(t);const ref=tg?tg.m:nearestTargetM(t);
+    if(ref!=null){live=fold(m,ref);
+      let ok=false;if(tg){const dv=live-tg.m;tg.tot++;ok=Math.abs(dv)<0.5;if(ok)tg.hit++;
+        const dt=S.lastFrame?Math.min(0.1,t-S.lastFrame):0;if(Math.abs(dv)<1)S.pts+=10000*dt/S.totDur*(ok?1:0.4);$('#pts').textContent=Math.round(S.pts);if(Math.abs(dv)<2){S.sumDev+=Math.abs(dv);S.nDev++}
+        $('#live').textContent=(dv>0?'+':'')+Math.round(dv*100)+'¢';$('#live').style.color=ok?'var(--ok)':'var(--warn)'}
+      S.trail.push({t,m:live,ok});if(S.trail.length>400)S.trail.splice(0,100)}}
+  S.lastFrame=t;
+  if(live!=null&&(live<MINM||live>MAXM))live=Math.max(MINM,Math.min(MAXM,live));
+  draw(t,live);
+  // letra
+  const L=slots();let i=L.findIndex(s=>t>=s.t0-0.4&&t<s.t1+0.3);
+  if(i<0){i=L.findIndex(s=>s.t0>t);if(i>=0){$('#lnow').style.setProperty('--p','0%');if(lastLyr!==-1-i){$('#lnow').textContent=L[i].text||('♪ frase '+(i+1));$('#lnext').textContent=L[i+1]?(L[i+1].text||''):'';$('#lhint').textContent='em '+Math.max(0,Math.ceil(L[i].t0-t))+' s';lastLyr=-1-i}else $('#lhint').textContent='em '+Math.max(0,Math.ceil(L[i].t0-t))+' s'}}
+  if(S.curLine>=0&&S.curLine!==i){rateLine(L[S.curLine])}
+  if(i>=0&&t>=L[i].t0)S.curLine=i;
+  if(i<0){}
+  else if(t<L[i].t0-0.4){}
+  else{const s=L[i];if(lastLyr!==i){$('#lnow').textContent=s.text||('♪ frase '+(i+1));$('#lnext').textContent=L[i+1]?(L[i+1].text||'♪'):'';$('#lhint').textContent='';lastLyr=i}
+    $('#lnow').style.setProperty('--p',Math.max(0,Math.min(100,(t-s.t0)/(s.t1-s.t0)*100)).toFixed(1)+'%')}
+  if(tSong>=S.playBuf.duration){stop();return}
+  requestAnimationFrame(loop)}
+
+function rateLine(s){S.curLine=-1;let n=0,h=0;
+  for(const x of TG){if(x.t0<s.t0-0.2)continue;if(x.t0>s.t1+0.2)break;if(x.t1-x.t0<0.12)continue;n++;if(x.tot>0&&x.hit/x.tot>=0.4)h++}
+  if(n<2)return;const r=h/n;const [txt,col]=r>=0.85?['PERFEITO!','#3ddc97']:r>=0.65?['ÓTIMO!','#7cf0c0']:r>=0.4?['BOM','#ffb547']:['CONTINUE!','#ff6b6b'];
+  const el=$('#toast');el.textContent=txt;el.style.color=col;el.classList.add('show');clearTimeout(S.toastT);S.toastT=setTimeout(()=>el.classList.remove('show'),1100)}
+
+/* ================= Google Drive (pasta privada) ================= */
+const GD_CLIENT_ID='454225852685-rbag23nf7kn37tr47j27eim2knbhpsuv.apps.googleusercontent.com';
+const GD_SCOPE='https://www.googleapis.com/auth/drive.file';
+const GD={tok:null,exp:0,client:null,root:null,songs:[],cur:null,pend:null};
+const TOM={0:'tom original','-1':'meio tom abaixo','-2':'1 tom abaixo','1':'meio tom acima','2':'1 tom acima'};
+function gdMsg(t,err){const e=$('#st-gd');e.textContent=t;e.classList.toggle('err',!!err)}
+const gdProg=p=>$('#gdpb').style.width=(p*100).toFixed(0)+'%';
+try{const t=JSON.parse(sessionStorage.getItem('gd_tok')||'null');if(t&&t.exp>Date.now()+60000){GD.tok=t.tok;GD.exp=t.exp}}catch(e){}
+function gisReady(){return new Promise((res,rej)=>{let n=0;(function w(){if(window.google&&google.accounts&&google.accounts.oauth2)return res();if(++n>75)return rej(new Error('o login do Google não carregou (bloqueador de conteúdo?)'));setTimeout(w,200)})()})}
+async function gdToken(interactive){
+  if(GD.tok&&GD.exp>Date.now()+60000)return GD.tok;
+  if(!interactive)throw new Error('entre com o Google de novo');
+  await gisReady();
+  return await new Promise((res,rej)=>{
+    GD.client=google.accounts.oauth2.initTokenClient({client_id:GD_CLIENT_ID,scope:GD_SCOPE,prompt:'',
+      callback:r=>{if(r.error){rej(new Error(r.error_description||r.error));return}
+        GD.tok=r.access_token;GD.exp=Date.now()+(+r.expires_in||3600)*1000;
+        try{sessionStorage.setItem('gd_tok',JSON.stringify({tok:GD.tok,exp:GD.exp}))}catch(e){}res(GD.tok)},
+      error_callback:e=>rej(new Error(e&&e.type==='popup_closed'?'janela de login fechada':'login cancelado'))});
+    GD.client.requestAccessToken()})}
+async function gd(url,opt={},interactive){
+  const tok=await gdToken(interactive);
+  const r=await fetch(url.startsWith('http')?url:'https://www.googleapis.com/drive/v3/'+url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+tok}});
+  if(r.status===401){GD.tok=null;try{sessionStorage.removeItem('gd_tok')}catch(e){}throw new Error('sessão do Google expirou: toque em “Entrar com Google”')}
+  if(!r.ok){let m='erro '+r.status;try{const j=await r.json();m=(j.error&&j.error.message)||m}catch(e){}
+    if(/has not been used|is disabled/i.test(m))m='a API do Google Drive não está ativada no projeto do Google Cloud';throw new Error(m)}
+  return r}
+const q=s=>encodeURIComponent(s);
+async function gdFind(qs){const r=await gd('files?q='+q(qs+' and trashed=false')+'&fields='+q('files(id,name,mimeType,size,appProperties,modifiedTime)')+'&pageSize=200&orderBy=name');return (await r.json()).files||[]}
+async function gdFolder(name,parent,kind){
+  const ex=await gdFind(`'${parent}' in parents and mimeType='application/vnd.google-apps.folder' and name='${name.replace(/'/g,"\\'")}'`);if(ex.length)return ex[0].id;
+  const r=await gd('files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder',parents:[parent],appProperties:{karaoke:kind}})});return (await r.json()).id}
+async function gdRoot(){if(GD.root)return GD.root;
+  const ex=await gdFind("mimeType='application/vnd.google-apps.folder' and appProperties has { key='karaoke' and value='root' }");
+  if(ex.length)return GD.root=ex[0].id;
+  const r=await gd('files?fields=id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Karaokê Studio',mimeType:'application/vnd.google-apps.folder',appProperties:{karaoke:'root'}})});
+  return GD.root=(await r.json()).id}
+function xhrPut(url,blob,onp){return new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open('PUT',url);x.upload.onprogress=e=>{if(e.lengthComputable&&onp)onp(e.loaded/e.total)};
+  x.onload=()=>x.status<300?res(JSON.parse(x.responseText||'{}')):rej(new Error('envio falhou ('+x.status+')'));x.onerror=()=>rej(new Error('envio falhou (rede)'));x.send(blob)})}
+async function gdUpload(name,blob,parent,existingId,onp){
+  const meta=existingId?{}:{name,parents:[parent]};
+  const url=existingId?'https://www.googleapis.com/upload/drive/v3/files/'+existingId+'?uploadType=resumable':'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable';
+  const r=await gd(url,{method:existingId?'PATCH':'POST',headers:{'Content-Type':'application/json; charset=UTF-8','X-Upload-Content-Type':blob.type||'application/octet-stream'},body:JSON.stringify(meta)});
+  const loc=r.headers.get('Location');
+  if(loc)return await xhrPut(loc,blob,onp);
+  // plano B: envio multipart
+  const bd='kstudio'+Math.random().toString(36).slice(2);
+  const body=new Blob([`--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: ${blob.type||'application/octet-stream'}\r\n\r\n`,blob,`\r\n--${bd}--`]);
+  const u2=existingId?'https://www.googleapis.com/upload/drive/v3/files/'+existingId+'?uploadType=multipart':'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+  return await (await gd(u2,{method:existingId?'PATCH':'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body})).json()}
+async function gdRefresh(){const root=await gdRoot();
+  GD.songs=await gdFind(`'${root}' in parents and mimeType='application/vnd.google-apps.folder'`);
+  const sel=$('#gd-song');sel.innerHTML='';GD.songs.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;sel.appendChild(o)});
+  const last=store.get('gd_song','');if(GD.songs.some(f=>f.id===last))sel.value=last;
+  $('#gd-songrow').classList.toggle('hide',!GD.songs.length);$('#gd-add').classList.remove('hide');if(!GD.songs.length)$('#gd-add').open=true;
+  gdMsg(GD.songs.length?`${GD.songs.length} música(s) na sua pasta “Karaokê Studio”. Escolha o tom em Ajustes e toque em Carregar.`:'Sua pasta “Karaokê Studio” foi criada no Drive. Adicione a primeira música abaixo.')}
+$('#gd-login').onclick=async()=>{try{gdMsg('Abrindo o login do Google…');await gdToken(true);$('#gd-login').textContent='✅ Conectado ao Google';$('#gd-savelyr').classList.remove('hide');await gdRefresh()}catch(e){gdMsg('Não entrou: '+e.message,true)}};
+$('#gd-files').onchange=e=>{const n=e.target.files.length;$('#lf-gdfiles small').textContent=n?n+' arquivo(s) escolhido(s)':'playbacks e vozes-guia (pode escolher vários)';$('#lf-gdfiles').classList.toggle('ok',n>0)};
+$('#gd-upload').onclick=async()=>{const name=$('#gd-newname').value.trim(),files=[...$('#gd-files').files];
+  if(!name||!files.length){gdMsg('Escreva o nome da música e escolha os arquivos.',true);return}
+  try{const root=await gdRoot();const folder=await gdFolder(name,root,'song');
+    for(let i=0;i<files.length;i++){const f=files[i];gdMsg(`Enviando ${i+1}/${files.length}: ${f.name}…`);
+      const ex=(await gdFind(`'${folder}' in parents and name='${f.name.replace(/'/g,"\\'")}'`))[0];
+      await gdUpload(f.name,f,folder,ex&&ex.id,p=>gdProg((i+p)/files.length))}
+    gdProg(1);store.set('gd_song',folder);await gdRefresh();gdMsg(`Pronto: “${name}” está no seu Drive.`)}catch(e){gdMsg('Erro ao enviar: '+e.message,true)}};
+async function gdBlob(id){return await (await gd('files/'+id+'?alt=media')).blob()}
+$('#gd-load').onclick=async()=>{const id=$('#gd-song').value;const song=GD.songs.find(f=>f.id===id);if(!song)return;store.set('gd_song',id);
+  try{gdMsg('Procurando os arquivos de “'+song.name+'”…');const files=await gdFind(`'${id}' in parents`);const tom=TOM[S.key];
+    const find=pre=>files.find(f=>f.name.toLowerCase().includes(pre)&&f.name.toLowerCase().includes(tom));
+    const pf=find('playback'),gf=find('voz-guia');
+    if(!pf||!gf){gdMsg(`Não achei “Playback - ${tom}” e “Voz-guia - ${tom}” nessa música. Troque o tom em Ajustes ou adicione os arquivos.`,true);return}
+    gdMsg('Baixando o playback…');gdProg(0.1);await loadPlay(new File([await gdBlob(pf.id)],pf.name));
+    gdMsg('Baixando a voz-guia…');gdProg(0.5);await loadGuide(new File([await gdBlob(gf.id)],gf.name));
+    const lf=files.find(f=>f.name==='letra.txt');if(lf){const t=await (await gdBlob(lf.id)).text();S.lyrics=t;store.set('lyrics',t);$('#ta').value=t}
+    const sf=files.find(f=>f.name==='sincronizacao.json');if(sf){try{S.sync=JSON.parse(await (await gdBlob(sf.id)).text());store.set('sync',S.sync)}catch(e){}}
+    GD.cur={id,name:song.name};gdProg(1);renderLines();gdMsg('Pronto: “'+song.name+'” ('+tom+') carregada do seu Drive.')}
+  catch(e){gdMsg('Erro ao carregar: '+e.message,true)}};
+async function gdPutText(folder,name,text,type){const ex=(await gdFind(`'${folder}' in parents and name='${name}'`))[0];return gdUpload(name,new Blob([text],{type}),folder,ex&&ex.id)}
+$('#gd-savelyr').onclick=async()=>{const st=$('#st-lyr');if(!GD.cur){st.textContent='Carregue uma música do Drive primeiro (aba Arquivos).';return}
+  st.textContent='Salvando no Drive…';
+  try{await gdPutText(GD.cur.id,'letra.txt',S.lyrics,'text/plain');if(S.sync)await gdPutText(GD.cur.id,'sincronizacao.json',JSON.stringify(S.sync),'application/json');st.textContent='Letra salva no seu Drive.'}
+  catch(e){st.textContent='Não salvou: '+e.message}};
+$('#b-up').onclick=async()=>{if(!S.lastTake||!GD.cur)return;const btn=$('#b-up');btn.disabled=true;btn.textContent='Enviando…';
+  try{await gdToken(true);const folder=await gdFolder('gravações',GD.cur.id,'rec');
+    await gdUpload(S.lastTake.name,S.lastTake.blob,folder,null,p=>btn.textContent='Enviando… '+Math.round(p*100)+'%');
+    btn.textContent='✅ Salva no seu Drive'}catch(e){btn.disabled=false;btn.textContent='☁️ Tentar enviar de novo';$('#r-note').textContent='Não enviou: '+e.message}};
+
+/* ================= iniciar ================= */
+resize();
+(async()=>{const p=await idb.get('play'),q=await idb.get('guide');
+  if(p&&p.blob){await loadPlay(new File([p.blob],p.name),true)}
+  if(q&&q.blob){await loadGuide(new File([q.blob],q.name),true)}
+  const lt=await idb.get('lastTake');if(lt)S.lastTake=lt;
+  if(!(p&&q))document.querySelector('nav button[data-tab=config]').click()})();
+if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
