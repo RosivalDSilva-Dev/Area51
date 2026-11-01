@@ -463,6 +463,7 @@ function buildTargets(){if(!S.guide)return;const sh=S.key-S.gkey+S.oct;
 const lyrLines=()=>S.lyrics.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
 function slots(){
   const L=lyrLines(),P=S.guide?S.guide.phrases:[];
+  if(S.sync&&S.sync.v===2){return S.sync.lines.map((x,i)=>({t0:x.t0,t1:x.t1,words:x.words,text:L[i]||''}))}
   if(S.sync&&S.sync.length){return S.sync.map((t,i)=>({t0:t,t1:i+1<S.sync.length?Math.min(S.sync[i+1],t+12):t+8,text:L[i]||''}))}
   if(S.lmap&&S.lmap.length)return S.lmap.map((x,i)=>({t0:x.t0,t1:x.t1,text:L[i]||''}));
   const out=[];for(let i=0;i<P.length;i++)out.push({t0:P[i][0],t1:P[i][1],text:L[i]||''});
@@ -478,7 +479,24 @@ function sylls(w){const isV=c=>VOW.test(c);const G=[];let i=0;
 function lineSyl(t){const W=t.replace(/[^\p{L}'’]+/gu,' ').trim().split(/\s+/).filter(Boolean);return W.flatMap(w=>{const a=sylls(w);return a.map((x,k)=>({s:x,wEnd:k===a.length-1}))})}
 function stretch(txt,d){if(d<0.7)return txt;const k=Math.min(6,Math.round(d/0.25));let p=-1;const lim=(txt.length>2&&/e$/i.test(txt)&&!VOW.test(txt[txt.length-2]))?txt.length-2:txt.length-1;for(let i=lim;i>=0;i--)if(VOW.test(txt[i])){p=i;break}
   return p<0?txt:txt.slice(0,p+1)+txt[p].repeat(k-1)+txt.slice(p+1)}
+function alignWords(L){const N=S.guide.notes,n=N.length,ns=new Array(n).fill(null);const orphans=[];
+  S.sync.lines.forEach((ln,li)=>{const text=L[li]||'';const W=text.replace(/[^\p{L}'’]+/gu,' ').trim().split(/\s+/).filter(Boolean);
+    const ws=ln.words||[];
+    W.forEach((w,wi)=>{const t0=ws[wi];if(t0==null)return;const t1=wi+1<ws.length?ws[wi+1]:ln.t1;
+      const idx=[];for(let k=0;k<n;k++){if(N[k].t0>=t0-0.12&&N[k].t0<t1-0.05&&!ns[k])idx.push(k);if(N[k].t0>t1)break}
+      const sy=sylls(w);
+      if(!idx.length){orphans.push([t0,w]);return}
+      const groups=[];const m=idx.length,k=sy.length;
+      if(m>=k){for(let q=0;q<k;q++)groups.push({txt:sy[q],ns:q<k-1?[idx[q]]:idx.slice(q)})}
+      else{for(let j=0;j<m;j++){const s0=Math.floor(j*k/m),s1=Math.floor((j+1)*k/m);groups.push({txt:sy.slice(s0,s1).join(''),ns:[idx[j]]})}}
+      for(const G of groups){const d=G.ns.reduce((a,x)=>a+N[x].t1-N[x].t0,0),end=N[G.ns[G.ns.length-1]].t1;
+        G.ns.forEach((x,q)=>ns[x]={txt:q?'':stretch(G.txt,d),cont:q>0,end})}})});
+  for(const [t0,w] of orphans){let bk=-1,bd=0.6;for(let k=0;k<n;k++){const d=Math.abs(N[k].t0-t0);if(d<bd){bd=d;bk=k}if(N[k].t0>t0+0.6)break}
+    if(bk<0)continue;let h=bk;while(h>0&&ns[h]&&ns[h].cont)h--;
+    if(ns[h]&&ns[h].txt){if(N[h].t0<=t0)ns[h].txt+=' '+w;else ns[h].txt=w+' '+ns[h].txt}else ns[h]={txt:w,cont:false,end:N[h].t1}}
+  S.nsyl=ns}
 function alignLyrics(){S.lmap=null;S.nsyl=null;const L=lyrLines();if(!S.guide||!L.length)return;
+  if(S.sync&&S.sync.v===2){alignWords(L);return}
   const N=S.guide.notes,n=N.length;if(!n)return;
   const SY=L.map(lineSyl),cnt=SY.map(a=>Math.max(1,a.length)),nl=L.length;
   const gap=k=>k<=0||k>=n?2:N[k].t0-N[k-1].t1;
@@ -729,7 +747,12 @@ function loop(){
   if(i<0){}
   else if(t<L[i].t0-0.4){}
   else{const s=L[i];if(lastLyr!==i){$('#lnow').textContent=s.text||('♪ frase '+(i+1));$('#lnext').textContent=L[i+1]?(L[i+1].text||'♪'):'';$('#lhint').textContent='';lastLyr=i}
-    $('#lnow').style.setProperty('--p',Math.max(0,Math.min(100,(t-s.t0)/(s.t1-s.t0)*100)).toFixed(1)+'%')}
+    let pr=(t-s.t0)/(s.t1-s.t0);
+    if(s.words&&s.words.length&&s.text){const W=s.text.split(/\s+/);const tot=s.text.length;let acc=0,p=0;
+      for(let wi=0;wi<W.length;wi++){const w0=s.words[wi]!=null?s.words[wi]:s.t1,w1=wi+1<s.words.length?s.words[wi+1]:s.t1,len=W[wi].length+1;
+        if(t>=w1){acc+=len;continue}if(t>w0)acc+=len*Math.min(1,(t-w0)/Math.max(0.15,Math.min(w1-w0,1.2)));break}
+      pr=acc/tot}
+    $('#lnow').style.setProperty('--p',Math.max(0,Math.min(100,pr*100)).toFixed(1)+'%')}
   if(tSong>=S.playBuf.duration){stop();return}
   requestAnimationFrame(loop)}
 
