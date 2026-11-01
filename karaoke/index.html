@@ -287,6 +287,8 @@ details.card>summary{list-style:none}details.card>summary::-webkit-details-marke
 <button id="b-menu" aria-label="Menu">☰</button>
 <div id="drawer"><div class="bg"></div><div class="pane">
   <div class="row" style="gap:8px"><button class="btn" data-go="letra">📝 Letra</button><button class="btn" data-go="config">⚙️ Arquivos e ajustes</button></div>
+  <div><button class="btn" id="d-cal" style="width:100%">🎧 Calibrar atraso do fone</button>
+  <div class="small" id="d-cal-st" style="margin-top:6px">Com o fone conectado, toque e diga “tá” junto com as 8 batidas. Atraso atual: <b id="d-lat">—</b></div></div>
   <h2 style="margin:6px 0 0">Começar de uma frase</h2>
   <p class="small" style="margin:0">Começa 3 segundos antes da frase escolhida.</p>
   <ul id="lines"></ul>
@@ -347,7 +349,8 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 });
 
 document.body.classList.add('stage');
-$('#b-menu').onclick=()=>$('#drawer').classList.add('open');
+$('#b-menu').onclick=()=>{$('#drawer').classList.add('open');latLabel()};
+$('#d-cal').onclick=()=>{if(S.playing)stop(true);$('#b-cal').onclick()};
 $('#drawer .bg').onclick=()=>$('#drawer').classList.remove('open');
 document.querySelectorAll('#drawer [data-go]').forEach(b=>b.onclick=()=>{$('#drawer').classList.remove('open');if(S.playing)stop(true);document.querySelector('nav button[data-tab='+b.dataset.go+']').click()});
 async function goLandscape(){try{if(matchMedia('(pointer:coarse)').matches&&!document.fullscreenElement){await document.documentElement.requestFullscreen({navigationUI:'hide'})}
@@ -392,7 +395,7 @@ $('#vol').oninput=e=>{if(S.gain)S.gain.gain.value=+e.target.value};
 const gv=$('#gvol');gv.value=store.get('gvol',0.6);
 gv.oninput=e=>{store.set('gvol',+e.target.value);if(S.ggain)S.ggain.gain.value=S.key===S.gkey?+e.target.value:0};
 const latEl=$('#lat');latEl.value=store.get('lat',0);
-const latLabel=()=>$('#latv').textContent=(+latEl.value===0?'auto (sem calibrar)':latEl.value+' ms');latLabel();
+const latLabel=()=>{const t=(+latEl.value===0?'auto (sem calibrar)':latEl.value+' ms');$('#latv').textContent=t;const d=$('#d-lat');if(d)d.textContent=t};latLabel();
 latEl.oninput=()=>{store.set('lat',+latEl.value);latLabel()};
 const keyLabel=()=>({0:'original','-1':'½ tom ↓','-2':'1 tom ↓','1':'½ tom ↑','2':'1 tom ↑'})[S.key];
 $('#hudkey').textContent=keyLabel();
@@ -576,7 +579,7 @@ function livePitch(){
 /* ---------- calibração de atraso ---------- */
 $('#b-cal').onclick=async()=>{
   const c=ac();if(c.state!=='running')await c.resume();if(!(await ensureMic()))return;
-  const st=$('#st-cal');st.textContent='Prepare-se… diga “tá” junto com cada batida.';
+  const st={set textContent(v){$('#st-cal').textContent=v;$('#d-cal-st').textContent=v}};st.textContent='Prepare-se… diga “tá” junto com cada batida.';
   const N=8,gap=0.6,t0=c.currentTime+1.2;const clicks=[];
   for(let k=0;k<N;k++){const t=t0+k*gap;clicks.push(t);const o=c.createOscillator(),gn=c.createGain();o.frequency.value=k%4?880:1320;
     gn.gain.setValueAtTime(0.0001,t);gn.gain.exponentialRampToValueAtTime(0.7,t+0.004);gn.gain.exponentialRampToValueAtTime(0.0001,t+0.06);
@@ -810,15 +813,27 @@ async function gdLoad(id,name){
     else{gdMsg('Baixando o playback (só desta vez)…');gdProg(0.1);await loadPlay(new File([await gdBlob(pf.id)],pf.name),false,pf.id)}
     if(cg&&cg.driveId===gf.id&&S.guide&&S.guideBuf){} else if(cg&&cg.driveId===gf.id){await loadGuide(new File([cg.blob],cg.name),true)}
     else{gdMsg('Baixando a voz-guia (só desta vez)…');gdProg(0.5);await loadGuide(new File([await gdBlob(gf.id)],gf.name),false,gf.id)}
-    const lf=files.find(f=>f.name==='letra.txt');if(lf&&!S.lyrics.trim()){const t=await (await gdBlob(lf.id)).text();S.lyrics=t;store.set('lyrics',t);$('#ta').value=t;alignLyrics();buildTargets()}
-    const sf=files.find(f=>f.name==='sincronizacao.json');if(sf&&!S.sync){try{S.sync=JSON.parse(await (await gdBlob(sf.id)).text());store.set('sync',S.sync)}catch(e){}}
+    await gdSyncText(id,files);
     GD.cur={id,name};store.set('gd_last',{id,name});gdProg(1);renderLines();updateCur();gdMsg('Pronto: “'+name+'” ('+tom+') está neste celular.')}
   catch(e){gdMsg('Erro ao carregar: '+e.message,true)}}
 $('#gd-load').onclick=()=>{const id=$('#gd-song').value;const song=GD.songs.find(f=>f.id===id);if(song)gdLoad(id,song.name)};
+async function gdSyncText(id,files){files=files||await gdFind(`'${id}' in parents`);let changed=false;
+  const lf=files.find(f=>f.name==='letra.txt');
+  if(lf&&(!S.lyrics.trim()||store.get('lyr_mtime','')<lf.modifiedTime)){const t=await (await gdBlob(lf.id)).text();
+    if(t.trim()){S.lyrics=t;store.set('lyrics',t);$('#ta').value=t;changed=true}store.set('lyr_mtime',lf.modifiedTime)}
+  const sf=files.find(f=>f.name==='sincronizacao.json');
+  if(sf&&store.get('sync_mtime','')<sf.modifiedTime){try{S.sync=JSON.parse(await (await gdBlob(sf.id)).text());store.set('sync',S.sync);changed=true}catch(e){}store.set('sync_mtime',sf.modifiedTime)}
+  if(changed){alignLyrics();buildTargets();renderLines();if(!S.playing)idle()}
+  return changed}
+async function gdAutoSync(){try{if(!GD.songs.length)return;let cur=GD.cur&&GD.songs.find(f=>f.id===GD.cur.id);
+  if(!cur&&GD.songs.length===1)cur=GD.songs[0];if(!cur)return;
+  GD.cur={id:cur.id,name:cur.name};store.set('gd_last',GD.cur);updateCur();
+  if(!(S.playBuf&&S.guide)){await gdLoad(cur.id,cur.name);return}
+  if(await gdSyncText(cur.id))gdMsg('Letra atualizada do seu Drive.')}catch(e){}}
 async function gdPutText(folder,name,text,type){const ex=(await gdFind(`'${folder}' in parents and name='${name}'`))[0];return gdUpload(name,new Blob([text],{type}),folder,ex&&ex.id)}
 $('#gd-savelyr').onclick=async()=>{const st=$('#st-lyr');if(!GD.cur){st.textContent='Carregue uma música do Drive primeiro (aba Arquivos).';return}
   st.textContent='Salvando no Drive…';
-  try{await gdPutText(GD.cur.id,'letra.txt',S.lyrics,'text/plain');if(S.sync)await gdPutText(GD.cur.id,'sincronizacao.json',JSON.stringify(S.sync),'application/json');st.textContent='Letra salva no seu Drive.'}
+  try{const r1=await gdPutText(GD.cur.id,'letra.txt',S.lyrics,'text/plain');store.set('lyr_mtime',new Date().toISOString());if(S.sync)await gdPutText(GD.cur.id,'sincronizacao.json',JSON.stringify(S.sync),'application/json');st.textContent='Letra salva no seu Drive.'}
   catch(e){st.textContent='Não salvou: '+e.message}};
 $('#b-up').onclick=async()=>{if(!S.lastTake||!GD.cur)return;const btn=$('#b-up');btn.disabled=true;btn.textContent='Enviando…';
   try{await gdToken(true);const folder=await gdFolder('gravações',GD.cur.id,'rec');
@@ -831,7 +846,7 @@ async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEn
 async function ownerOk(){const ok=store.get('gate_ok',null);if(ok&&ok.tok===GD.tok)return true;
   const r=await gd('about?fields=user(emailAddress)');const j=await r.json();const h=await sha256(((j.user&&j.user.emailAddress)||'').trim().toLowerCase());
   const yes=h===OWNER_HASH;if(yes)store.set('gate_ok',{tok:GD.tok});return yes}
-function unlock(){document.body.classList.remove('locked');tunerOn=false;$('#gd-login').textContent='✅ Conectado ao Google';$('#gd-savelyr').classList.remove('hide');resize();gdRefresh().catch(()=>{})}
+function unlock(){document.body.classList.remove('locked');tunerOn=false;$('#gd-login').textContent='✅ Conectado ao Google';$('#gd-savelyr').classList.remove('hide');resize();gdRefresh().then(gdAutoSync).catch(()=>{})}
 async function gateTry(interactive){const st=$('#gate-st');
   try{if(interactive)st.textContent='Abrindo o login do Google…';await gdToken(interactive);
     if(await ownerOk()){unlock();return true}
